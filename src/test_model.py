@@ -41,6 +41,8 @@ def runExperiment():
     dataset = make_dataset(cfg['data_name'])
     model = make_model(cfg['model'])
     result = resume(cfg['best_path'])
+    if result is None:
+        raise ValueError('No valid model, please train model first')
     cfg['step'] = result['cfg']['step']
     model = model.to(cfg['device'])
     model.load_state_dict(result['model'])
@@ -61,9 +63,10 @@ def test(data_loader, model, logger):
         for i, input in enumerate(data_loader):
             input_size = input['data'].size(0)
             input = to_device(input, cfg['device'])
-            output = model(input)
+            output = model(**input)
             evaluation = logger.evaluate('test', 'batch', input, output)
             logger.append(evaluation, 'test', input_size)
+            logger.add('test', input, output)
         evaluation = logger.evaluate('test', 'full')
         logger.append(evaluation, 'test', input_size)
         info = {'info': ['Model: {}'.format(cfg['tag']),
