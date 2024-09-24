@@ -36,7 +36,8 @@ def process_control():
     cfg[tag]['optimizer']['betas'] = (0.9, 0.999)
     cfg[tag]['optimizer']['weight_decay'] = 5e-4
     cfg[tag]['optimizer']['nesterov'] = True
-    cfg[tag]['optimizer']['batch_size'] = {'train': cfg['batch_size'], 'test': cfg['batch_size']}
+    cfg[tag]['optimizer']['batch_size'] = {'train': cfg['batch_size'], 'valid': cfg['batch_size'],
+                                           'test': cfg['batch_size']}
     cfg[tag]['optimizer']['step_period'] = cfg['step_period']
     cfg[tag]['optimizer']['num_steps'] = cfg['num_steps']
     cfg[tag]['optimizer']['scheduler_name'] = 'CosineAnnealingLR'

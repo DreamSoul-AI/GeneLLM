@@ -13,7 +13,7 @@ data_stats = {'MNIST': ((0.1307,), (0.3081,)), 'FashionMNIST': ((0.2860,), (0.35
               'SVHN': ((0.4377, 0.4438, 0.4728), (0.1980, 0.2010, 0.1970))}
 
 
-def make_dataset(data_name, verbose=True):
+def make_dataset(data_name, verbose=True, **kwargs):
     dataset_ = {}
     if verbose:
         print('fetching data {}...'.format(data_name))
@@ -54,6 +54,12 @@ def make_dataset(data_name, verbose=True):
         dataset_['test'].transform = dataset.Compose([
             transforms.ToTensor(),
             transforms.Normalize(*data_stats[data_name])])
+    elif data_name in ['GUE']:
+        task_name = kwargs['task_name']
+        subset = kwargs['subset']
+        dataset_['train'] = dataset.GUE(root=root, task_name=task_name, subset=subset, split='train')
+        dataset_['valid'] = dataset.GUE(root=root, task_name=task_name, subset=subset, split='valid')
+        dataset_['test'] = dataset.GUE(root=root, task_name=task_name, subset=subset, split='test')
     else:
         raise ValueError('Not valid dataset name')
     if verbose:
