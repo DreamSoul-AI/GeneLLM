@@ -1,5 +1,6 @@
 import torch
 import torch.nn.functional as F
+from sklearn.metrics import f1_score, matthews_corrcoef
 
 
 def make_metric(split, **kwargs):
@@ -50,6 +51,24 @@ class Accuracy(BaseMetric):
         return acc
 
 
+class F1(BaseMetric):
+    def __call__(self, pred, target):
+        with torch.no_grad():
+            if pred.dtype != torch.int64:
+                pred = pred.argmax(dim=-1)
+            f1 = f1_score(target.cpu().numpy(), pred.cpu().numpy(), average='weighted')
+        return f1
+
+
+class MCC(BaseMetric):
+    def __call__(self, pred, target):
+        with torch.no_grad():
+            if pred.dtype != torch.int64:
+                pred = pred.argmax(dim=-1)
+            mcc = matthews_corrcoef(target.cpu().numpy(), pred.cpu().numpy())
+        return mcc
+
+
 class MSE(BaseMetric):
     def __call__(self, pred, target):
         with torch.no_grad():
@@ -91,7 +110,7 @@ class Metric:
                     mode_keys[split][metric_name_i]['input'].add('target')
                     mode_keys[split][metric_name_i]['output'].add('pred')
                 elif metric_name_i in ['RMSE', 'R2', 'Correlation', 'ResidualMean', 'ResidualStd', 'ResidualSkewness',
-                                       'ResidualKurtosis']:
+                                       'ResidualKurtosis', 'F1', 'MCC']:
                     mode[split][metric_name_i] = 'full'
                     mode_keys[split][metric_name_i]['input'].add('target')
                     mode_keys[split][metric_name_i]['output'].add('pred')
