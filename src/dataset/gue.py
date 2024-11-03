@@ -8,7 +8,7 @@ from .utils import make_classes_counts
 
 
 class GUE(Dataset):
-    data_name = 'DNA'
+    data_name = 'GUE'
 
     def __init__(self, root, task_name, subset, split, transform=None):
         self.root = os.path.expanduser(root)
@@ -21,7 +21,7 @@ class GUE(Dataset):
         self.id, self.data, self.target = load(os.path.join(self.processed_folder, self.split))
         self.other = {}
         self.classes_counts = make_classes_counts(self.target)
-        self.classes_to_labels, self.target_size = load(os.path.join(self.processed_folder, 'meta'))
+        self.data_shape, self.target_size, self.classes_to_label = load(os.path.join(self.processed_folder, 'meta'))
 
     def __getitem__(self, index):
         id, data, target = torch.tensor(self.id[index]), torch.tensor(self.data[index]), torch.tensor(
@@ -87,8 +87,9 @@ class GUE(Dataset):
         train_id, train_data, train_target = make_data_split(train_df)
         valid_id, valid_data, valid_target = make_data_split(valid_df)
         test_id, test_data, test_target = make_data_split(test_df)
+        data_shape = [len(train_data[0])]
         classes = np.unique(train_target)
         classes_to_labels = {classes[i]: i for i in range(len(classes))}
         target_size = len(classes)
         return (train_id, train_data, train_target), (valid_id, valid_data, valid_target), \
-                (test_id, test_data, test_target), (classes_to_labels, target_size)
+                (test_id, test_data, test_target), (data_shape, target_size, classes_to_labels)

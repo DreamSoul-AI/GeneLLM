@@ -1,7 +1,9 @@
 ---
 # control
 control:
-  data_name: MNIST
+  data_name: GUE
+  task_name: mouse
+  subset: 0
   model_name: linear
 # experiment
 pin_memory: True

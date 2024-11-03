@@ -6,11 +6,11 @@ from sklearn.metrics import f1_score, matthews_corrcoef
 def make_metric(split, **kwargs):
     data_name = kwargs['data_name']
     metric_name = {k: [] for k in split}
-    if data_name in ['MNIST', 'FashionMNIST', 'SVHN', 'CIFAR10', 'CIFAR100']:
-        best_direction = 'up'
-        best_metric_name = 'Accuracy'
+    if data_name in ['GUE']:
+        best_direction = 'down'
+        best_metric_name = 'Loss'
         for k in metric_name:
-            metric_name[k].extend(['Loss', 'Accuracy'])
+            metric_name[k].extend(['Loss', 'F1', 'MCC'])
     else:
         raise ValueError('Not valid data name')
     metric = Metric(metric_name, best_direction, best_metric_name)

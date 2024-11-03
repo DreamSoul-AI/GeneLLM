@@ -3,6 +3,8 @@ from config import cfg
 
 def process_control():
     cfg['data_name'] = cfg['control']['data_name']
+    cfg['task_name'] = cfg['control']['task_name']
+    cfg['subset'] = str(cfg['control']['subset'])
     cfg['model_name'] = cfg['control']['model_name']
 
     cfg['batch_size'] = 250
@@ -17,8 +19,10 @@ def process_control():
     data_shape = {'MNIST': [1, 28, 28], 'FashionMNIST': [1, 28, 28], 'SVHN': [3, 32, 32], 'CIFAR10': [3, 32, 32],
                   'CIFAR100': [3, 32, 32]}
     target_size = {'MNIST': 10, 'FashionMNIST': 10, 'SVHN': 10, 'CIFAR10': 10, 'CIFAR100': 100}
-    cfg['model']['data_shape'] = data_shape[cfg['data_name']]
-    cfg['model']['target_size'] = target_size[cfg['data_name']]
+    if cfg['data_name'] in data_shape:
+        cfg['model']['data_shape'] = data_shape[cfg['data_name']]
+    if cfg['data_name'] in target_size:
+        cfg['model']['target_size'] = target_size[cfg['data_name']]
     cfg['model']['linear'] = {}
     cfg['model']['mlp'] = {'hidden_size': 128, 'scale_factor': 2, 'num_layers': 2, 'activation': 'relu'}
     cfg['model']['cnn'] = {'hidden_size': [64, 128, 256, 512]}
