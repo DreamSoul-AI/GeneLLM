@@ -4,7 +4,7 @@ control:
   data_name: GUE
   task_name: mouse
   subset: 0
-  model_name: linear
+  model_name: dnabert2
 # experiment
 pin_memory: True
 num_workers: 0
