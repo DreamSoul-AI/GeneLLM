@@ -24,13 +24,19 @@ class GUE(Dataset):
         self.data_shape, self.target_size, self.classes_to_label = load(os.path.join(self.processed_folder, 'meta'))
 
     def __getitem__(self, index):
-        id, data, target = torch.tensor(self.id[index]), torch.tensor(self.data[index]), torch.tensor(
+        id, data, target = torch.tensor(self.id[index]), self.data[index], torch.tensor(
             self.target[index])
+
+        print(data)
+        exit()
+
+
+
         input = {'id': id, 'data': data, 'target': target}
         other = {k: torch.tensor(self.other[k][index]) for k in self.other}
         input = {**input, **other}
         if self.transform is not None:
-            input = self.transform(input)
+            input = self.transform(input['data'])
         return input
 
     def __len__(self):

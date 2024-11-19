@@ -119,7 +119,7 @@ def make_data_loader(dataset, batch_size, num_steps=None, step=0, step_period=1,
     return data_loader
 
 
-def process_dataset(dataset):
+def process_dataset(dataset, tokenizer):
     processed_dataset = dataset
     cfg['data_size'] = {k: len(processed_dataset[k]) for k in processed_dataset}
     cfg['model']['data_shape'] = dataset['train'].data_shape
@@ -128,4 +128,20 @@ def process_dataset(dataset):
         cfg['num_steps'] = int(np.ceil(len(processed_dataset['train']) / cfg['batch_size'])) * cfg['num_epochs']
         cfg['eval_period'] = int(np.ceil(len(processed_dataset['train']) / cfg['batch_size']))
         cfg[cfg['tag']]['optimizer']['num_steps'] = cfg['num_steps']
+
+    def tokenize_transform(tokenizer, max_length):
+        def transform(example):
+            tokenized = tokenizer(
+                example,
+                return_tensors="pt",
+                padding="longest",
+                max_length=max_length,
+                truncation=True,
+            )
+            return tokenized
+
+        return transform
+
+    for k in processed_dataset:
+        processed_dataset[k].transform = tokenize_transform(tokenizer, cfg['model']['max_length'])
     return processed_dataset

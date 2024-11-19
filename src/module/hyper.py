@@ -31,6 +31,10 @@ def process_control():
     cfg['model']['wresnet28x2'] = {'depth': 28, 'widen_factor': 2, 'drop_rate': 0.0}
     cfg['model']['wresnet28x8'] = {'depth': 28, 'widen_factor': 8, 'drop_rate': 0.0}
 
+    max_length = {'EMP': 512, 'mouse': 110, 'promcore': 80, 'prom300': 310, 'splice': 410, 'tf': 110, 'virus': 1024}
+    cfg['model']['max_length'] = max_length[cfg['task_name']]
+    cfg['model']['padding_side'] = 'right'
+
     tag = cfg['tag']
     cfg[tag] = {}
     cfg[tag]['optimizer'] = {}

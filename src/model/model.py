@@ -7,11 +7,10 @@ from transformers import get_linear_schedule_with_warmup
 
 
 def make_model(cfg):
-    core = eval('model.{}(cfg)'.format(cfg['model_name']))
-    model_ = model.base(core)
-    print(model_)
-    exit()
-    return model_
+    core, tokenizer = eval('model.{}(cfg)'.format(cfg['model_name']))
+    base = model.base(core)
+    base.tokenizer = tokenizer
+    return base
 
 
 def init_param(m):
