@@ -26,17 +26,11 @@ class GUE(Dataset):
     def __getitem__(self, index):
         id, data, target = torch.tensor(self.id[index]), self.data[index], torch.tensor(
             self.target[index])
-
-        print(data)
-        exit()
-
-
-
-        input = {'id': id, 'data': data, 'target': target}
+        input = {'id': id, 'data': data, 'labels': target}
         other = {k: torch.tensor(self.other[k][index]) for k in self.other}
         input = {**input, **other}
         if self.transform is not None:
-            input = self.transform(input['data'])
+            input = {**input, **self.transform(input['data'])}
         return input
 
     def __len__(self):

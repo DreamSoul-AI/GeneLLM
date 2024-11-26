@@ -71,11 +71,13 @@ def input_collate(input):
     first = input[0]
     batch = {}
     for k, v in first.items():
-        if v is not None and not isinstance(v, str):
+        if v is not None:
             if isinstance(v, torch.Tensor):
                 batch[k] = torch.stack([f[k] for f in input])
             elif isinstance(v, np.ndarray):
                 batch[k] = torch.tensor(np.stack([f[k] for f in input]))
+            elif isinstance(v, str):
+                batch[k] = [f[k] for f in input]
             else:
                 batch[k] = torch.tensor([f[k] for f in input])
     return batch
@@ -119,7 +121,7 @@ def make_data_loader(dataset, batch_size, num_steps=None, step=0, step_period=1,
     return data_loader
 
 
-def process_dataset(dataset, tokenizer):
+def process_dataset(dataset, tokenizer=None):
     processed_dataset = dataset
     cfg['data_size'] = {k: len(processed_dataset[k]) for k in processed_dataset}
     cfg['model']['data_shape'] = dataset['train'].data_shape
@@ -134,14 +136,19 @@ def process_dataset(dataset, tokenizer):
             tokenized = tokenizer(
                 example,
                 return_tensors="pt",
-                padding="longest",
+                padding="max_length",
                 max_length=max_length,
-                truncation=True,
+                truncation=False,
             )
+            tokenized['input_ids'] = tokenized['input_ids'].squeeze(0)
+            # tokenized['token_type_ids'] = tokenized['token_type_ids'].squeeze(0)
+            tokenized['attention_mask'] = tokenized['attention_mask'].squeeze(0)
+            del tokenized['token_type_ids']
             return tokenized
 
         return transform
 
-    for k in processed_dataset:
-        processed_dataset[k].transform = tokenize_transform(tokenizer, cfg['model']['max_length'])
+    if tokenizer is not None:
+        for k in processed_dataset:
+            processed_dataset[k].transform = tokenize_transform(tokenizer, cfg['model']['max_length'])
     return processed_dataset

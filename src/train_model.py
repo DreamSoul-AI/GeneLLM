@@ -41,6 +41,7 @@ def runExperiment():
     cfg['best_path'] = os.path.join(cfg['tag_path'], 'best')
     cfg['logger_path'] = os.path.join('output', 'logger', 'train', 'runs', cfg['tag'])
     dataset = make_dataset(cfg['data_name'], task_name=cfg['task_name'], subset=cfg['subset'])
+    dataset = process_dataset(dataset)
     model = make_model(cfg['model'])
     dataset = process_dataset(dataset, model.tokenizer)
     result = resume(cfg['checkpoint_path'], resume_mode=cfg['resume_mode'])
@@ -85,7 +86,7 @@ def train(data_loader, model, optimizer, scheduler, logger):
         for i, input in data_loader:
             if i % cfg['step_period'] == 0 and cfg['profile']:
                 logger.profiler.step()
-            input_size = input['data'].size(0)
+            input_size = input['labels'].size(0)
             input = to_device(input, cfg['device'])
             output = model(**input)
             loss = 1 / cfg['step_period'] * output['loss']
@@ -123,7 +124,7 @@ def test(data_loader, model, logger):
     with torch.no_grad():
         model.train(False)
         for i, input in enumerate(data_loader):
-            input_size = input['data'].size(0)
+            input_size = input['labels'].size(0)
             input = to_device(input, cfg['device'])
             output = model(**input)
             evaluation = logger.evaluate('test', 'batch', input, output)

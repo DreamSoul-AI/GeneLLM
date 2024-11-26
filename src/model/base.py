@@ -11,7 +11,14 @@ class Base(nn.Module):
 
     def forward(self, **input):
         output = {}
-        output['pred'] = self.model(input['data'])
+        print(input['input_ids'].size())
+        print(input['attention_mask'].size())
+        output['pred'] = self.model(**input)
+        print(output['pred'][0].size(), output['pred'][1].size())
+        print(output['pred'][0][:, 0, :])  # Embeddings of the `[CLS]` token
+        print(output['pred'][1])  # Sequence embeddings
+
+        exit()
         output['loss'] = self.loss(output, input)
         return output
 

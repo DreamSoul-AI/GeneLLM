@@ -7,11 +7,11 @@ def process_control():
     cfg['subset'] = str(cfg['control']['subset'])
     cfg['model_name'] = cfg['control']['model_name']
 
-    cfg['batch_size'] = 250
+    cfg['batch_size'] = 2
     cfg['step_period'] = 1
     cfg['num_steps'] = 80000
     cfg['eval_period'] = 200
-    # cfg['num_epochs'] = 400
+    cfg['num_epochs'] = 3
     cfg['collate_mode'] = 'dict'
 
     cfg['model'] = {}
@@ -31,7 +31,7 @@ def process_control():
     cfg['model']['wresnet28x2'] = {'depth': 28, 'widen_factor': 2, 'drop_rate': 0.0}
     cfg['model']['wresnet28x8'] = {'depth': 28, 'widen_factor': 8, 'drop_rate': 0.0}
 
-    max_length = {'EMP': 512, 'mouse': 110, 'promcore': 80, 'prom300': 310, 'splice': 410, 'tf': 110, 'virus': 1024}
+    max_length = {'EMP': 128, 'mouse': 30, 'promcore': 20, 'prom300': 70, 'splice': 80, 'tf': 30, 'virus': 256}
     cfg['model']['max_length'] = max_length[cfg['task_name']]
     cfg['model']['padding_side'] = 'right'
 
