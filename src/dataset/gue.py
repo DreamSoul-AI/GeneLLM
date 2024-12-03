@@ -21,12 +21,12 @@ class GUE(Dataset):
         self.id, self.data, self.target = load(os.path.join(self.processed_folder, self.split))
         self.other = {}
         self.classes_counts = make_classes_counts(self.target)
-        self.data_shape, self.target_size, self.classes_to_label = load(os.path.join(self.processed_folder, 'meta'))
+        self.data_size, self.target_size, self.classes_to_label = load(os.path.join(self.processed_folder, 'meta'))
 
     def __getitem__(self, index):
         id, data, target = torch.tensor(self.id[index]), self.data[index], torch.tensor(
             self.target[index])
-        input = {'id': id, 'data': data, 'labels': target}
+        input = {'id': id, 'data': data, 'target': target}
         other = {k: torch.tensor(self.other[k][index]) for k in self.other}
         input = {**input, **other}
         if self.transform is not None:
@@ -87,9 +87,9 @@ class GUE(Dataset):
         train_id, train_data, train_target = make_data_split(train_df)
         valid_id, valid_data, valid_target = make_data_split(valid_df)
         test_id, test_data, test_target = make_data_split(test_df)
-        data_shape = [len(train_data[0])]
+        data_size = [len(train_data[0])]
         classes = np.unique(train_target)
         classes_to_labels = {classes[i]: i for i in range(len(classes))}
         target_size = len(classes)
         return (train_id, train_data, train_target), (valid_id, valid_data, valid_target), \
-                (test_id, test_data, test_target), (data_shape, target_size, classes_to_labels)
+                (test_id, test_data, test_target), (data_size, target_size, classes_to_labels)

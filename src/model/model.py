@@ -8,7 +8,7 @@ from transformers import get_linear_schedule_with_warmup
 
 def make_model(cfg):
     core, tokenizer = eval('model.{}(cfg)'.format(cfg['model_name']))
-    base = model.base(core)
+    base = model.base(core, cfg)
     base.tokenizer = tokenizer
     return base
 
@@ -68,7 +68,7 @@ def make_scheduler(optimizer, cfg):
         scheduler = optim.lr_scheduler.CyclicLR(optimizer, base_lr=cfg['lr'], max_lr=10 * cfg['lr'])
     elif cfg['scheduler_name'] == 'LinearAnnealingLR':
         scheduler = get_linear_schedule_with_warmup(optimizer,
-                                                    num_warmup_steps=int(cfg['num_steps'] * cfg['warmup_ratio']),
+                                                    num_warmup_steps=int(cfg['num_warmup_steps']),
                                                     num_training_steps=cfg['num_steps'])
     elif cfg['scheduler_name'] == 'ConstantLR':
         scheduler = optim.lr_scheduler.ConstantLR(optimizer, factor=cfg['factor'])
