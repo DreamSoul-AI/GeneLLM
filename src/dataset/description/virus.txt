@@ -1,0 +1,1 @@
+Covid variant prediction (Virus) aims to predict the variant type of the SARS_CoV_2 virus based on 1000-length genome sequences. We download the genomes from the EpiCoV database (Khareet al., 2021) of the Global Initiative on Sharing Avian Influenza Data (GISAID). We consider 9 types of SARS_CoV_2 variants, including Alpha, Beta, Delta, Eta, Gamma, Iota, Kappa, Lambda and Zeta.
