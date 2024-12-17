@@ -7,7 +7,7 @@ from dataset import make_dataset, make_data_loader, process_dataset, Compose
 from module import save, Stats, makedir_exist_ok, process_control
 
 
-def move_raw_datasets():
+def move_prom_datasets():
     # Define source and destination directories
     source_dir = './data/GUE/raw/prom'
     dest_dirs = {
@@ -47,6 +47,59 @@ def move_raw_datasets():
     return
 
 
+def move_mouse_datasets():
+    # Define source and destination directories
+    source_dir = './data/GUE/raw/mouse'
+    # Mapping of source folder names to new folder names
+    name_mapping = {
+        '0': 'Ch12Nrf2Iggrab',
+        '1': 'Ch12Znf384hpa004051Iggrab',
+        '2': 'MelJundIggrab',
+        '3': 'MelMafkDm2p5dStd',
+        '4': 'MelNelfeIggrab'
+    }
+
+    # Check and move folders
+    for name, mapped_name in name_mapping.items():
+        src_path = os.path.join(source_dir, name)
+        if os.path.exists(src_path):
+            dest_path = os.path.join(source_dir, mapped_name)
+            if not os.path.exists(dest_path):
+                shutil.move(src_path, dest_path)
+                print(f"Moved {name} to {dest_path}")
+            else:
+                print(f"Already moved: {dest_path}")
+            print(f"Removed empty source directory: {source_dir}")
+    return
+
+
+def move_tf_datasets():
+    # Define source and destination directories
+    source_dir = './data/GUE/raw/tf'
+    # Mapping of source folder names to new folder names
+    name_mapping = {
+        '0': 'wgEncodeEH000552',
+        '1': 'wgEncodeEH000606',
+        '2': 'wgEncodeEH001546',
+        '3': 'wgEncodeEH001776',
+        '4': 'wgEncodeEH002829'
+    }
+
+    # Check and move folders
+    for name, mapped_name in name_mapping.items():
+        src_path = os.path.join(source_dir, name)
+        if os.path.exists(os.path.join(src_path)):
+            src_path = os.path.join(source_dir, name)
+            dest_path = os.path.join(source_dir, mapped_name)
+            if not os.path.exists(dest_path):
+                shutil.move(src_path, dest_path)
+                print(f"Moved {name} to {dest_path}")
+            else:
+                print(f"Already moved: {dest_path}")
+            print(f"Removed empty source directory: {source_dir}")
+    return
+
+
 if __name__ == "__main__":
     stats_path = os.path.join('output', 'stats')
     dim = 1
@@ -64,7 +117,9 @@ if __name__ == "__main__":
     cfg['seed'] = 0
     cfg['tag'] = 'make_dataset'
     process_control()
-    move_raw_datasets()
+    move_prom_datasets()
+    move_mouse_datasets()
+    move_tf_datasets()
     with torch.no_grad():
         for data_name in data_names:
             for task_name in task_names:
@@ -74,3 +129,4 @@ if __name__ == "__main__":
                     cfg['step'] = 0
                     data_loader = make_data_loader(dataset, cfg[cfg['tag']]['optimizer']['batch_size'], shuffle=False)
                     print(data_name, task_name, subset)
+                    print(cfg['num_samples'])

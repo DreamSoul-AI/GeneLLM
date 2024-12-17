@@ -9,9 +9,11 @@ def process_control():
 
     cfg['batch_size'] = 8
     cfg['step_period'] = 1
-    cfg['num_steps'] = 80000
+    cfg['num_steps'] = 30
     cfg['eval_period'] = 200
-    cfg['num_epochs'] = 5
+    cfg['eval'] = {}
+    cfg['eval']['num_steps'] = 30
+    # cfg['num_epochs'] = 5
     cfg['collate_mode'] = 'dict'
 
     cfg['model'] = {}
