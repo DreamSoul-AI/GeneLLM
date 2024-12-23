@@ -22,6 +22,7 @@ class GUE(Dataset):
         self.other = {}
         self.classes_counts = make_classes_counts(self.target)
         self.data_size, self.target_size, self.classes_to_label = load(os.path.join(self.processed_folder, 'meta'))
+        self.target_names = ['False', 'True']
 
     def __getitem__(self, index):
         id, data, target = torch.tensor(self.id[index]), self.data[index], torch.tensor(
