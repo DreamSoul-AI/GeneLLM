@@ -107,11 +107,13 @@ if __name__ == "__main__":
     task_names = ['EMP', 'mouse', 'promcore', 'prom300', 'splice', 'tf', 'virus']
     subsets = {
         'EMP': ['H3', 'H3K4me1', 'H3K4me2', 'H3K4me3', 'H3K9ac', 'H3K14ac', 'H3K36me3', 'H3K79me3', 'H4', 'H4ac'],
-        'mouse': ['0', '1', '2', '3', '4'],
+        # 'mouse': ['0', '1', '2', '3', '4'],
+        'mouse': ['Ch12Nrf2Iggrab', 'Ch12Znf384hpa004051Iggrab', 'MelJundIggrab', 'MelMafkDm2p5dStd', 'MelNelfeIggrab'],
         'promcore': ['all', 'notata', 'tata'],
         'prom300': ['all', 'notata', 'tata'],
         'splice': ['reconstructed'],
-        'tf': ['0', '1', '2', '3', '4'],
+        # 'tf': ['0', '1', '2', '3', '4'],
+        'tf': ['wgEncodeEH000552', 'wgEncodeEH000606', 'wgEncodeEH001546', 'wgEncodeEH001776', 'wgEncodeEH002829'],
         'virus': ['covid'],
     }
     cfg['seed'] = 0

@@ -3,7 +3,7 @@
 control:
   data_name: GUE
   task_name: mouse
-  subset: 0
+  subset: Ch12Nrf2Iggrab-Ch12Znf384hpa004051Iggrab # TODO: add multiple datasets
   model_name: dnabert2
 # experiment
 pin_memory: True

@@ -19,8 +19,8 @@ class Base(nn.Module):
 
     def forward(self, **input):
         output = {}
-        # print(input['input_ids'].size())
-        # print(input['attention_mask'].size())
+        print(input['input_ids'].size())
+        print(input['attention_mask'].size())
         # https://github.com/mosaicml/examples/blob/main/examples/benchmarks/bert/src/bert_layers.py
         encoder_outputs, pooled_output = self.model(**input)
         output['pred'] = self.output_proj(pooled_output)
@@ -29,8 +29,8 @@ class Base(nn.Module):
         # print(output['pred'][1])  # Sequence embeddings
         # print(input.keys())
         output['loss'] = self.loss(output, input)
-        # print(output['loss'])
-        # exit()
+        print(output['loss'])
+        exit()
         return output
 
 
