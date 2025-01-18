@@ -9,16 +9,17 @@ def dnabert2(cfg):
     cache_tokenizer_path = os.path.join(cache_dir, cfg['model_name'], 'tokenizer')
     cache_config_path = os.path.join(cache_dir, cfg['model_name'], 'config')
     cache_model_path = os.path.join(cache_dir, cfg['model_name'], 'model')
-    if not os.path.exists(os.path.join(cache_dir, cfg['model_name'])):
-        local_files_only = False
-    else:
-        local_files_only = True
+    local_files_only = {'tokenizer': False, 'config': False, 'model': False}
+    for key in local_files_only:
+        if os.path.exists(os.path.join(cache_dir, cfg['model_name'], key)):
+            local_files_only[key] = True
     tokenizer = AutoTokenizer.from_pretrained("zhihan1996/DNABERT-2-117M", trust_remote_code=True,
-                                              cache_dir=cache_tokenizer_path, local_files_only=local_files_only,
+                                              cache_dir=cache_tokenizer_path,
+                                              local_files_only=local_files_only['tokenizer'],
                                               use_fast=True, padding_side=cfg['padding_side'])
-    config = BertConfig.from_pretrained("zhihan1996/DNABERT-2-117M", trust_remote_code=True,
-                                        cache_dir=cache_config_path, local_files_only=local_files_only)
+    config = BertConfig.from_pretrained("zhihan1996/DNABERT-2-117M",
+                                        cache_dir=cache_config_path, local_files_only=local_files_only['config'])
 
     model = AutoModel.from_pretrained("zhihan1996/DNABERT-2-117M", trust_remote_code=True, config=config,
-                                      cache_dir=cache_model_path, local_files_only=local_files_only)
+                                      cache_dir=cache_model_path, local_files_only=local_files_only['model'])
     return model, tokenizer

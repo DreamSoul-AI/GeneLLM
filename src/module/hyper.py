@@ -10,7 +10,7 @@ def process_control():
     cfg['batch_size'] = 8
     cfg['step_period'] = 1
     cfg['num_steps'] = 30
-    cfg['eval_period'] = 200
+    cfg['eval_period'] = 30
     cfg['eval'] = {}
     cfg['eval']['num_steps'] = 30
     # cfg['num_epochs'] = 5
@@ -19,7 +19,7 @@ def process_control():
     cfg['model'] = {}
     cfg['model']['model_name'] = cfg['model_name']
     data_size = {'MNIST': [1, 28, 28], 'FashionMNIST': [1, 28, 28], 'SVHN': [3, 32, 32], 'CIFAR10': [3, 32, 32],
-                  'CIFAR100': [3, 32, 32]}
+                 'CIFAR100': [3, 32, 32]}
     target_size = {'MNIST': 10, 'FashionMNIST': 10, 'SVHN': 10, 'CIFAR10': 10, 'CIFAR100': 100}
     if cfg['data_name'] in data_size:
         cfg['model']['data_size'] = data_size[cfg['data_name']]
@@ -38,8 +38,18 @@ def process_control():
     max_length = {'EMP': 128, 'mouse': 30, 'promcore': 20, 'prom300': 70, 'splice': 80, 'tf': 30, 'virus': 256}
     cfg['model']['max_length'] = max_length[cfg['task_name']]
     cfg['model']['padding_side'] = 'right'
-
     cfg['model']['freeze'] = False
+    cfg['subset_names'] = {
+        'EMP': ['H3', 'H3K4me1', 'H3K4me2', 'H3K4me3', 'H3K9ac', 'H3K14ac', 'H3K36me3', 'H3K79me3', 'H4', 'H4ac'],
+        # 'mouse': ['0', '1', '2', '3', '4'],
+        'mouse': ['Ch12Nrf2Iggrab', 'Ch12Znf384hpa004051Iggrab', 'MelJundIggrab', 'MelMafkDm2p5dStd', 'MelNelfeIggrab'],
+        'promcore': ['all', 'notata', 'tata'],
+        'prom300': ['all', 'notata', 'tata'],
+        'splice': ['reconstructed'],
+        # 'tf': ['0', '1', '2', '3', '4'],
+        'tf': ['wgEncodeEH000552', 'wgEncodeEH000606', 'wgEncodeEH001546', 'wgEncodeEH001776', 'wgEncodeEH002829'],
+        'virus': ['covid'],
+    }
 
     # https://github.com/MAGICS-LAB/DNABERT_2/blob/main/finetune/train.py
     # https://github.com/MAGICS-LAB/DNABERT_2/blob/main/finetune/scripts/run_dnabert2.sh
@@ -47,7 +57,7 @@ def process_control():
     cfg[tag] = {}
     cfg[tag]['optimizer'] = {}
     cfg[tag]['optimizer']['optimizer_name'] = 'AdamW'
-    cfg[tag]['optimizer']['lr'] = 3e-5
+    cfg[tag]['optimizer']['lr'] = 1e-3
     cfg[tag]['optimizer']['momentum'] = 0.9
     cfg[tag]['optimizer']['betas'] = (0.9, 0.999)
     cfg[tag]['optimizer']['weight_decay'] = 0.01
@@ -56,6 +66,7 @@ def process_control():
                                            'test': cfg['batch_size']}
     cfg[tag]['optimizer']['step_period'] = cfg['step_period']
     cfg[tag]['optimizer']['num_steps'] = cfg['num_steps']
-    cfg[tag]['optimizer']['scheduler_name'] = 'LinearAnnealingLR'
-    cfg[tag]['optimizer']['num_warmup_steps'] = 50
+    # cfg[tag]['optimizer']['scheduler_name'] = 'LinearAnnealingLR'
+    cfg[tag]['optimizer']['scheduler_name'] = 'None'
+    # cfg[tag]['optimizer']['num_warmup_steps'] = 50
     return
