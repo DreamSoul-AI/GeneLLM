@@ -10,10 +10,10 @@ from .utils import make_classes_counts
 class GUE(Dataset):
     data_name = 'GUE'
 
-    def __init__(self, root, task_name, subset, split, transform=None):
+    def __init__(self, root, task_name, subset_name, split, transform=None):
         self.root = os.path.expanduser(root)
         self.task_name = task_name
-        self.subset = subset
+        self.subset_name = subset_name
         self.split = split
         self.transform = transform
         if not check_exists(self.processed_folder):
@@ -27,7 +27,7 @@ class GUE(Dataset):
     def __getitem__(self, index):
         id, data, target = torch.tensor(self.id[index]), self.data[index], torch.tensor(
             self.target[index])
-        input = {'id': id, 'data': data, 'target': target}
+        input = {'id': id, 'data': data, 'target': target, 'task_name': self.task_name, 'subset_name': self.subset_name}
         other = {k: torch.tensor(self.other[k][index]) for k in self.other}
         input = {**input, **other}
         if self.transform is not None:
@@ -39,11 +39,11 @@ class GUE(Dataset):
 
     @property
     def processed_folder(self):
-        return os.path.join(self.root, 'processed', self.task_name, self.subset)
+        return os.path.join(self.root, 'processed', self.task_name, self.subset_name)
 
     @property
     def raw_folder(self):
-        return os.path.join(self.root, 'raw', self.task_name, self.subset)
+        return os.path.join(self.root, 'raw', self.task_name, self.subset_name)
 
     def process(self):
         if not check_exists(self.raw_folder):
@@ -59,8 +59,8 @@ class GUE(Dataset):
         raise NotImplementedError
 
     def __repr__(self):
-        fmt_str = 'Dataset {}\nSize: {}\nRoot: {}\nTask name:{}\nSubset:{}\nSplit: {}\nTransforms: {}'.format(
-            self.__class__.__name__, self.__len__(), self.root, self.task_name, self.subset, self.split,
+        fmt_str = 'Dataset {}\nSize: {}\nRoot: {}\nTask name:{}\nSubset name:{}\nSplit: {}\nTransforms: {}'.format(
+            self.__class__.__name__, self.__len__(), self.root, self.task_name, self.subset_name, self.split,
             self.transform.__repr__())
         return fmt_str
 

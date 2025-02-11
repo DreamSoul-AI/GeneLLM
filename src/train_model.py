@@ -40,7 +40,7 @@ def runExperiment():
     cfg['checkpoint_path'] = os.path.join(cfg['tag_path'], 'checkpoint')
     cfg['best_path'] = os.path.join(cfg['tag_path'], 'best')
     cfg['logger_path'] = os.path.join('output', 'logger', 'train', 'runs', cfg['tag'])
-    dataset = make_dataset(cfg['data_name'], task_name=cfg['task_name'], subset=cfg['subset'])
+    dataset = make_dataset(cfg['data_name'], task_name=cfg['task_name'], subset_name=cfg['subset_name'])
     dataset = process_dataset(dataset)
     model = make_model(cfg['model'])
     dataset = process_dataset(dataset, model.tokenizer)

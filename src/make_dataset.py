@@ -105,7 +105,7 @@ if __name__ == "__main__":
     dim = 1
     data_names = ['GUE']
     task_names = ['EMP', 'mouse', 'promcore', 'prom300', 'splice', 'tf', 'virus']
-    subsets = {
+    subset_names = {
         'EMP': ['H3', 'H3K4me1', 'H3K4me2', 'H3K4me3', 'H3K9ac', 'H3K14ac', 'H3K36me3', 'H3K79me3', 'H4', 'H4ac'],
         # 'mouse': ['0', '1', '2', '3', '4'],
         'mouse': ['Ch12Nrf2Iggrab', 'Ch12Znf384hpa004051Iggrab', 'MelJundIggrab', 'MelMafkDm2p5dStd', 'MelNelfeIggrab'],
@@ -125,10 +125,10 @@ if __name__ == "__main__":
     with torch.no_grad():
         for data_name in data_names:
             for task_name in task_names:
-                for subset in subsets[task_name]:
-                    dataset = make_dataset(data_name, task_name=task_name, subset=subset)
+                for subset_name in subset_names[task_name]:
+                    dataset = make_dataset(data_name, task_name=task_name, subset_name=subset_name)
                     process_dataset(dataset)
                     cfg['step'] = 0
                     data_loader = make_data_loader(dataset, cfg[cfg['tag']]['optimizer']['batch_size'], shuffle=False)
-                    print(data_name, task_name, subset)
+                    print(data_name, task_name, subset_name)
                     print(cfg['num_samples'])

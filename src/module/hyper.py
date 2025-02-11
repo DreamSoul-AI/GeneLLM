@@ -4,7 +4,7 @@ from config import cfg
 def process_control():
     cfg['data_name'] = cfg['control']['data_name']
     cfg['task_name'] = cfg['control']['task_name']
-    cfg['subset'] = str(cfg['control']['subset'])
+    cfg['subset_name'] = str(cfg['control']['subset_name'])
     cfg['model_name'] = cfg['control']['model_name']
 
     cfg['batch_size'] = 8
@@ -36,7 +36,10 @@ def process_control():
     cfg['model']['dnabert2'] = {'hidden_size': 768}
 
     max_length = {'EMP': 128, 'mouse': 30, 'promcore': 20, 'prom300': 70, 'splice': 80, 'tf': 30, 'virus': 256}
-    cfg['model']['max_length'] = max_length[cfg['task_name']]
+    if cfg['task_name'] == -1:
+        cfg['model']['max_length'] = max(list(max_length.values()))
+    else:
+        cfg['model']['max_length'] = max_length[cfg['task_name']]
     cfg['model']['padding_side'] = 'right'
     cfg['model']['freeze'] = False
     cfg['subset_names'] = {

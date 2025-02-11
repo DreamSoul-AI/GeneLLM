@@ -38,7 +38,7 @@ def runExperiment():
     cfg['best_path'] = os.path.join(cfg['tag_path'], 'best')
     cfg['logger_path'] = os.path.join('output', 'logger', 'test', 'runs', cfg['tag'])
     cfg['result_path'] = os.path.join('output', 'result', cfg['tag'])
-    dataset = make_dataset(cfg['data_name'], task_name=cfg['task_name'], subset=cfg['subset'])
+    dataset = make_dataset(cfg['data_name'], task_name=cfg['task_name'], subset_name=cfg['subset_name'])
     dataset = process_dataset(dataset)
     model = make_model(cfg['model'])
     result = resume(cfg['best_path'])

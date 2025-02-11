@@ -4,6 +4,7 @@ import os
 import torch
 from torch.utils.data import DataLoader
 from torch.utils.data.dataloader import default_collate
+from module import apply_recursively
 from config import cfg
 
 
@@ -13,30 +14,44 @@ def make_dataset(data_name, verbose=True, **kwargs):
     root = os.path.join('data', data_name)
     if data_name in ['GUE']:
         task_name = kwargs['task_name']
-        subset = kwargs['subset']
-        if subset == '-1':
-            subset_names = cfg['subset_names'][task_name]
+        subset_name = kwargs['subset_name']
+        if task_name == -1:
+            task_names = list(cfg['subset_names'].keys())
             dataset_ = {'train': [], 'valid': [], 'test': []}
-            for subset in subset_names:
-                dataset_train = dataset.GUE(root=root, task_name=task_name, subset=subset, split='train')
-                dataset_valid = dataset.GUE(root=root, task_name=task_name, subset=subset, split='valid')
-                dataset_test = dataset.GUE(root=root, task_name=task_name, subset=subset, split='test')
-                dataset_['train'].append(dataset_train)
-                dataset_['valid'].append(dataset_valid)
-                dataset_['test'].append(dataset_test)
-            # data_size = dataset_['train'][0].data_size
-            # target_size = dataset_['train'][0].target_size
-            # dataset_['train'] = torch.utils.data.ConcatDataset(dataset_['train'])
-            # dataset_['valid'] = torch.utils.data.ConcatDataset(dataset_['valid'])
-            # dataset_['test'] = torch.utils.data.ConcatDataset(dataset_['test'])
-            # for split in dataset_:
-            #     dataset_[split].data_size = data_size
-            #     dataset_[split].target_size = target_size
+            for task_name_i in task_names:
+                subset_names = cfg['subset_names'][task_name_i]
+                for subset_name_i in subset_names:
+                    dataset_train = dataset.GUE(root=root, task_name=task_name_i, subset_name=subset_name_i,
+                                                split='train')
+                    dataset_valid = dataset.GUE(root=root, task_name=task_name_i, subset_name=subset_name_i,
+                                                split='valid')
+                    dataset_test = dataset.GUE(root=root, task_name=task_name_i, subset_name=subset_name_i,
+                                               split='test')
+                    dataset_['train'].append(dataset_train)
+                    dataset_['valid'].append(dataset_valid)
+                    dataset_['test'].append(dataset_test)
         else:
-            dataset_ = {}
-            dataset_['train'] = dataset.GUE(root=root, task_name=task_name, subset=subset, split='train')
-            dataset_['valid'] = dataset.GUE(root=root, task_name=task_name, subset=subset, split='valid')
-            dataset_['test'] = dataset.GUE(root=root, task_name=task_name, subset=subset, split='test')
+            if subset_name == '-1':
+                dataset_ = {'train': [], 'valid': [], 'test': []}
+                subset_names = cfg['subset_names'][task_name]
+                for subset_name_i in subset_names:
+                    dataset_train = dataset.GUE(root=root, task_name=task_name, subset_name=subset_name_i,
+                                                split='train')
+                    dataset_valid = dataset.GUE(root=root, task_name=task_name, subset_name=subset_name_i,
+                                                split='valid')
+                    dataset_test = dataset.GUE(root=root, task_name=task_name, subset_name=subset_name_i,
+                                               split='test')
+                    dataset_['train'].append(dataset_train)
+                    dataset_['valid'].append(dataset_valid)
+                    dataset_['test'].append(dataset_test)
+            else:
+                dataset_ = {}
+                dataset_['train'] = dataset.GUE(root=root, task_name=task_name, subset_name=subset_name,
+                                                split='train')
+                dataset_['valid'] = dataset.GUE(root=root, task_name=task_name, subset_name=subset_name,
+                                                split='valid')
+                dataset_['test'] = dataset.GUE(root=root, task_name=task_name, subset_name=subset_name,
+                                               split='test')
     else:
         raise ValueError('Not valid dataset name')
     if verbose:
@@ -45,18 +60,25 @@ def make_dataset(data_name, verbose=True, **kwargs):
 
 
 def input_collate(input):
-    first = input[0]
+    def add_(input_, key=None):
+        split_names = key.split('.')
+        current = batch
+        for split_name in split_names[:-1]:
+            if split_name not in current:
+                current[split_name] = {}
+            current = current[split_name]
+        if split_names[-1] not in current:
+            current[split_names[-1]] = input_.unsqueeze(0)
+        else:
+            current[split_names[-1]] = torch.cat([current[split_names[-1]], input_.unsqueeze(0)], dim=0)
+        return
+
     batch = {}
-    for k, v in first.items():
-        if v is not None:
-            if isinstance(v, torch.Tensor):
-                batch[k] = torch.stack([f[k] for f in input])
-            elif isinstance(v, np.ndarray):
-                batch[k] = torch.tensor(np.stack([f[k] for f in input]))
-            elif isinstance(v, str):
-                batch[k] = [f[k] for f in input]
-            else:
-                batch[k] = torch.tensor([f[k] for f in input])
+    apply_condition = lambda x: isinstance(x, torch.Tensor)
+    identity_condition = lambda x: isinstance(x, (str, type(None)))
+    for i in range(len(input)):
+        input_i = input[i]
+        apply_recursively(add_, input_i, apply_condition=apply_condition, identity_condition=identity_condition)
     return batch
 
 
