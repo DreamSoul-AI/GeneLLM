@@ -43,12 +43,13 @@ The labels represent the variant type of the SARS-CoV-2 virus, including Alpha, 
 tokenizer = AutoTokenizer.from_pretrained('intfloat/multilingual-e5-large-instruct')
 model = AutoModel.from_pretrained('intfloat/multilingual-e5-large-instruct')
 
-num_species = 1
-input_texts = [mouse]
+
+batch_input_texts = [EMP, mouse, prom300, promcore, splice, tf, virus]
+
 
 
 # Tokenize the input texts
-batch_dict = tokenizer(input_texts, max_length=512, padding=True, truncation=True, return_tensors='pt')
+batch_dict = tokenizer(batch_input_texts, max_length=512, padding=True, truncation=True, return_tensors='pt')
 
 outputs = model(**batch_dict)
 embeddings = outputs.last_hidden_state
