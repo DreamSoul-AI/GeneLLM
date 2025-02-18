@@ -1,5 +1,5 @@
 # RPipe
-Research Pipeline
+Research Pipeline: this branch is used to test sentence BERT.
  
 ## Requirements
 See `requirements.txt`
