@@ -136,41 +136,47 @@ def process_dataset(dataset, tokenizer=None):
             return tokenized
 
         return transform
+
     processed_dataset = dataset
 
     if isinstance(processed_dataset['train'], list):
-        if tokenizer is not None:
+        if cfg['model']['num_targets'] == 1:
             data_size = processed_dataset['train'][0].data_size
             target_size = processed_dataset['train'][0].target_size
+        else:
+            data_size = {} # TODO: this seems has error
+            target_size = {}
+            for k in processed_dataset:
+                for i in range(len(processed_dataset[k])):
+                    if processed_dataset[k][i].task_name not in data_size:
+                        data_size[processed_dataset[k][i].task_name] = processed_dataset[k][i].data_size
+                    if processed_dataset[k][i].task_name not in target_size:
+                        target_size[processed_dataset[k][i].task_name] = processed_dataset[k][i].target_size
+        if tokenizer is not None:
             for k in processed_dataset:
                 for i in range(len(processed_dataset[k])):
                     processed_dataset[k][i].transform = tokenize_transform(tokenizer, cfg['model']['max_length'])
-            processed_dataset['train'] = torch.utils.data.ConcatDataset(processed_dataset['train'])
-            processed_dataset['valid'] = torch.utils.data.ConcatDataset(processed_dataset['valid'])
-            processed_dataset['test'] = torch.utils.data.ConcatDataset(processed_dataset['test'])
-            for k in processed_dataset:
-                processed_dataset[k].data_size = data_size
-                processed_dataset[k].target_size = target_size
-            cfg['num_samples'] = {k: len(processed_dataset[k]) for k in processed_dataset}
-            cfg['model']['data_size'] = dataset['train'].data_size
-            cfg['model']['target_size'] = dataset['train'].target_size
-        else:
-            cfg['model']['data_size'] = dataset['train'][0].data_size
-            cfg['model']['target_size'] = dataset['train'][0].target_size
+        processed_dataset['train'] = torch.utils.data.ConcatDataset(processed_dataset['train'])
+        processed_dataset['valid'] = torch.utils.data.ConcatDataset(processed_dataset['valid'])
+        processed_dataset['test'] = torch.utils.data.ConcatDataset(processed_dataset['test'])
+        for k in processed_dataset:
+            processed_dataset[k].data_size = data_size
+            processed_dataset[k].target_size = target_size
+        cfg['num_samples'] = {k: len(processed_dataset[k]) for k in processed_dataset}
+        cfg['model']['data_size'] = processed_dataset['train'].data_size
+        cfg['model']['target_size'] = processed_dataset['train'].target_size
     else:
+        cfg['num_samples'] = {k: len(processed_dataset[k]) for k in processed_dataset}
+        cfg['model']['data_size'] = processed_dataset['train'].data_size
+        cfg['model']['target_size'] = processed_dataset['train'].target_size
         if tokenizer is not None:
             for k in processed_dataset:
                 processed_dataset[k].transform = tokenize_transform(tokenizer, cfg['model']['max_length'])
-        cfg['num_samples'] = {k: len(processed_dataset[k]) for k in processed_dataset}
-        cfg['model']['data_size'] = dataset['train'].data_size
-        cfg['model']['target_size'] = dataset['train'].target_size
 
     if 'num_epochs' in cfg:
         cfg['num_steps'] = int(np.ceil(len(processed_dataset['train']) / cfg['batch_size'])) * cfg['num_epochs']
         cfg['eval_period'] = int(np.ceil(len(processed_dataset['train']) / cfg['batch_size']))
         cfg[cfg['tag']]['optimizer']['num_steps'] = cfg['num_steps']
-
-
 
     # data_size = dataset_['train'][0].data_size
     # target_size = dataset_['train'][0].target_size

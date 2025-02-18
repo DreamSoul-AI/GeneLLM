@@ -16,32 +16,7 @@ def process_control():
     # cfg['num_epochs'] = 5
     cfg['collate_mode'] = 'dict'
 
-    cfg['model'] = {}
-    cfg['model']['model_name'] = cfg['model_name']
-    data_size = {'MNIST': [1, 28, 28], 'FashionMNIST': [1, 28, 28], 'SVHN': [3, 32, 32], 'CIFAR10': [3, 32, 32],
-                 'CIFAR100': [3, 32, 32]}
-    target_size = {'MNIST': 10, 'FashionMNIST': 10, 'SVHN': 10, 'CIFAR10': 10, 'CIFAR100': 100}
-    if cfg['data_name'] in data_size:
-        cfg['model']['data_size'] = data_size[cfg['data_name']]
-    if cfg['data_name'] in target_size:
-        cfg['model']['target_size'] = target_size[cfg['data_name']]
-    cfg['model']['model_name'] = cfg['model_name']
-    cfg['model']['linear'] = {}
-    cfg['model']['mlp'] = {'hidden_size': 128, 'scale_factor': 2, 'num_layers': 2, 'activation': 'relu'}
-    cfg['model']['cnn'] = {'hidden_size': [64, 128, 256, 512]}
-    cfg['model']['resnet10'] = {'hidden_size': [64, 128, 256, 512]}
-    cfg['model']['resnet18'] = {'hidden_size': [64, 128, 256, 512]}
-    cfg['model']['wresnet28x2'] = {'depth': 28, 'widen_factor': 2, 'drop_rate': 0.0}
-    cfg['model']['wresnet28x8'] = {'depth': 28, 'widen_factor': 8, 'drop_rate': 0.0}
-    cfg['model']['dnabert2'] = {'hidden_size': 768}
-
-    max_length = {'EMP': 128, 'mouse': 30, 'promcore': 20, 'prom300': 70, 'splice': 80, 'tf': 30, 'virus': 256}
-    if cfg['task_name'] == -1:
-        cfg['model']['max_length'] = max(list(max_length.values()))
-    else:
-        cfg['model']['max_length'] = max_length[cfg['task_name']]
-    cfg['model']['padding_side'] = 'right'
-    cfg['model']['freeze'] = False
+    cfg['task_names'] = ['EMP', 'mouse', 'promcore', 'prom300', 'splice', 'tf', 'virus']
     cfg['subset_names'] = {
         'EMP': ['H3', 'H3K4me1', 'H3K4me2', 'H3K4me3', 'H3K9ac', 'H3K14ac', 'H3K36me3', 'H3K79me3', 'H4', 'H4ac'],
         # 'mouse': ['0', '1', '2', '3', '4'],
@@ -53,6 +28,24 @@ def process_control():
         'tf': ['wgEncodeEH000552', 'wgEncodeEH000606', 'wgEncodeEH001546', 'wgEncodeEH001776', 'wgEncodeEH002829'],
         'virus': ['covid'],
     }
+
+    cfg['model'] = {}
+    cfg['model']['model_name'] = cfg['model_name']
+    cfg['model']['task_names'] = cfg['task_names']
+    cfg['model']['subset_names'] = cfg['subset_names']
+    cfg['model']['dnabert2'] = {'hidden_size': 768}
+    # TODO: this inconsistent with data size
+    max_length = {'EMP': 128, 'mouse': 30, 'promcore': 20, 'prom300': 70, 'splice': 80, 'tf': 30, 'virus': 256}
+    cfg['model']['padding_side'] = 'right'
+    cfg['model']['freeze'] = False
+    if cfg['task_name'] == -1:
+        cfg['model']['max_length'] = max(list(max_length.values()))
+    else:
+        cfg['model']['max_length'] = max_length[cfg['task_name']]
+    if cfg['task_name'] == -1:
+        cfg['model']['num_targets'] = len(cfg['task_names'])
+    else:
+        cfg['model']['num_targets'] = 1
 
     # https://github.com/MAGICS-LAB/DNABERT_2/blob/main/finetune/train.py
     # https://github.com/MAGICS-LAB/DNABERT_2/blob/main/finetune/scripts/run_dnabert2.sh

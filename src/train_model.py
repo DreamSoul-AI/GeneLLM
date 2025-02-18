@@ -8,7 +8,7 @@ import torch.backends.cudnn as cudnn
 from config import cfg, process_args
 from dataset import make_dataset, make_data_loader, process_dataset
 from metric import make_logger
-from model import make_model, make_optimizer, make_scheduler
+from model import make_core, make_model, make_optimizer, make_scheduler
 from module import check, resume, to_device, process_control
 
 cudnn.benchmark = True
@@ -41,9 +41,9 @@ def runExperiment():
     cfg['best_path'] = os.path.join(cfg['tag_path'], 'best')
     cfg['logger_path'] = os.path.join('output', 'logger', 'train', 'runs', cfg['tag'])
     dataset = make_dataset(cfg['data_name'], task_name=cfg['task_name'], subset_name=cfg['subset_name'])
-    dataset = process_dataset(dataset)
-    model = make_model(cfg['model'])
-    dataset = process_dataset(dataset, model.tokenizer)
+    core, tokenizer = make_core(cfg['model'])
+    dataset = process_dataset(dataset, tokenizer)
+    model = make_model(core, tokenizer, cfg['model'])
     result = resume(cfg['checkpoint_path'], resume_mode=cfg['resume_mode'])
     if result is None:
         cfg['step'] = 0

@@ -6,6 +6,19 @@ from torch.utils.data import Dataset
 from module import check_exists, save, load
 from .utils import make_classes_counts
 
+task_names = ['EMP', 'mouse', 'promcore', 'prom300', 'splice', 'tf', 'virus']
+subset_names = {
+    'EMP': ['H3', 'H3K4me1', 'H3K4me2', 'H3K4me3', 'H3K9ac', 'H3K14ac', 'H3K36me3', 'H3K79me3', 'H4', 'H4ac'],
+    # 'mouse': ['0', '1', '2', '3', '4'],
+    'mouse': ['Ch12Nrf2Iggrab', 'Ch12Znf384hpa004051Iggrab', 'MelJundIggrab', 'MelMafkDm2p5dStd', 'MelNelfeIggrab'],
+    'promcore': ['all', 'notata', 'tata'],
+    'prom300': ['all', 'notata', 'tata'],
+    'splice': ['reconstructed'],
+    # 'tf': ['0', '1', '2', '3', '4'],
+    'tf': ['wgEncodeEH000552', 'wgEncodeEH000606', 'wgEncodeEH001546', 'wgEncodeEH001776', 'wgEncodeEH002829'],
+    'virus': ['covid'],
+}
+
 
 class GUE(Dataset):
     data_name = 'GUE'
@@ -23,11 +36,15 @@ class GUE(Dataset):
         self.classes_counts = make_classes_counts(self.target)
         self.data_size, self.target_size, self.classes_to_label = load(os.path.join(self.processed_folder, 'meta'))
         self.target_names = ['False', 'True']
+        self.task_idx = task_names.index(task_name)
+        self.subset_idx = subset_names[task_name].index(subset_name)
 
     def __getitem__(self, index):
         id, data, target = torch.tensor(self.id[index]), self.data[index], torch.tensor(
             self.target[index])
-        input = {'id': id, 'data': data, 'target': target, 'task_name': self.task_name, 'subset_name': self.subset_name}
+        task_idx, subset_idx = torch.tensor(self.task_idx), torch.tensor(self.subset_idx)
+        input = {'id': id, 'data': data, 'target': target, 'task_idx': task_idx,
+                 'subset_idx': subset_idx}
         other = {k: torch.tensor(self.other[k][index]) for k in self.other}
         input = {**input, **other}
         if self.transform is not None:
@@ -74,7 +91,8 @@ class GUE(Dataset):
             elif df.shape[1] == 3:
                 # data is in the format of [text1, text2, label]
                 texts = df.iloc[:, [0, 1]].values.tolist()  # Get the first two columns
-                labels = np.array(df.iloc[:, 2].astype(int).tolist()).astype(np.int64) # Get the third column and convert to int
+                labels = np.array(df.iloc[:, 2].astype(int).tolist()).astype(
+                    np.int64)  # Get the third column and convert to int
             else:
                 raise ValueError("Data format not supported.")
             id = np.arange(len(texts), dtype=np.int64)
@@ -93,4 +111,4 @@ class GUE(Dataset):
         classes_to_labels = {classes[i]: i for i in range(len(classes))}
         target_size = len(classes)
         return (train_id, train_data, train_target), (valid_id, valid_data, valid_target), \
-                (test_id, test_data, test_target), (data_size, target_size, classes_to_labels)
+            (test_id, test_data, test_target), (data_size, target_size, classes_to_labels)

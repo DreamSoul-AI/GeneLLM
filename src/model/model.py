@@ -6,8 +6,12 @@ import model
 from transformers import get_linear_schedule_with_warmup
 
 
-def make_model(cfg):
+def make_core(cfg):
     core, tokenizer = eval('model.{}(cfg)'.format(cfg['model_name']))
+    return core, tokenizer
+
+
+def make_model(core, tokenizer, cfg):
     base = model.base(core, cfg)
     base.tokenizer = tokenizer
     return base
