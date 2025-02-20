@@ -113,7 +113,7 @@ def make_data_loader(dataset, batch_size, num_steps=None, step=0, step_period=1,
                                             collate_fn=make_data_collate(collate_mode),
                                             worker_init_fn=np.random.seed(seed))
             else:
-                data_loader[k] = DataLoader(dataset=dataset[k], batch_size=batch_size[k], shuffle=False,
+                data_loader[k] = DataLoader(dataset=dataset[k], batch_size=batch_size[k], shuffle=True,
                                             pin_memory=pin_memory, num_workers=num_workers,
                                             collate_fn=make_data_collate(collate_mode),
                                             worker_init_fn=np.random.seed(seed))

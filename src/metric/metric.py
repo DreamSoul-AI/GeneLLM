@@ -148,7 +148,15 @@ class Metric:
                 if key not in self.buffer['output']:
                     self.buffer['output'][key] = output[key]
                 else:
-                    self.buffer['output'][key] = torch.cat([self.buffer['output'][key], output[key]], dim=0)
+                    if isinstance(output[key], dict):
+                        for name in output[key]:
+                            if name not in self.buffer['output'][key]:
+                                self.buffer['output'][key][name] = output[key][name]
+                            else:
+                                self.buffer['output'][key][name] = \
+                                    torch.cat([self.buffer['output'][key][name], output[key][name]], dim=0)
+                    else:
+                        self.buffer['output'][key] = torch.cat([self.buffer['output'][key], output[key]], dim=0)
         return
 
     def evaluate(self, split, mode, input=None, output=None, metric_name=None):

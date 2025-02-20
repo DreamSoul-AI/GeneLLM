@@ -120,7 +120,7 @@ def train(data_loader, model, optimizer, scheduler, logger):
                 break
     return
 
-
+# TODO: need split testing
 def test(data_loader, model, logger):
     with torch.no_grad():
         model.train(False)

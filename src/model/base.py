@@ -8,6 +8,8 @@ class Base(nn.Module):
     def __init__(self, model, hidden_size, target_size, num_targets, task_names, subset_names, freeze):
         super().__init__()
         self.model = model
+        self.hidden_size = hidden_size
+        self.target_size = target_size
         self.num_targets = num_targets
         self.task_names = task_names
         self.subset_names = subset_names
@@ -30,29 +32,27 @@ class Base(nn.Module):
 
     def forward(self, **input):
         output = {}
-        # print(input)
-        # print(input['input_ids'].size())
-        # print(input['attention_mask'].size())
         # https://github.com/mosaicml/examples/blob/main/examples/benchmarks/bert/src/bert_layers.py
         with torch.no_grad():
             valid_input = filter_args(self.model.forward, input)
-            print(valid_input)
             encoder_outputs, pooled_output = self.model(**valid_input)
         if self.num_targets == 1:
             output['pred'] = self.output_proj(pooled_output)
+            output['loss'] = self.loss(output['pred'], input['target'])
         else:
+            loss = 0
             unique_task_idx = torch.unique(input['task_idx'])
+            output['pred'] = {}
+            # TODO: need more efficient implementation
             for i in range(len(unique_task_idx)):
-                task_idx = unique_task_idx[i]
-            print(unique_task_idx, input['task_idx'])
-            exit()
-        # print(output['pred'][0].size(), output['pred'][1].size())
-        # print(output['pred'][0][:, 0, :])  # Embeddings of the `[CLS]` token
-        # print(output['pred'][1])  # Sequence embeddings
-        # print(input.keys())
-        output['loss'] = self.loss(output, input)
-        # print(output['loss'])
-        # exit()
+                task_idx = unique_task_idx[i].item()
+                mask_i = input['task_idx'] == task_idx
+                output_i = self.output_proj[task_idx](pooled_output[mask_i])
+                target_i = input['target'][mask_i]
+                output['pred'][task_idx] = target_i
+                loss_i = self.loss(output_i, target_i, reduction='sum')
+                loss += loss_i
+            output['loss'] = loss / len(encoder_outputs)
         return output
 
 
