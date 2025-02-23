@@ -44,9 +44,12 @@ class Logger:
         self.mean = defaultdict(int)
         return
 
-    def append(self, result, split, n=1):
+    def append(self, result, split, n=1, tag=None):
         for k in result:
-            name = '{}/{}'.format(split, k)
+            if tag is None:
+                name = '{}/{}'.format(split, k)
+            else:
+                name = '{}/{}/{}'.format(split, tag, k)
             self.tracker[name] = result[k]
             if isinstance(result[k], Number):
                 self.counter[name] += n
@@ -63,12 +66,16 @@ class Logger:
                                           result[k][i]) / self.counter[name][i]
         return
 
-    def write(self, split, metric_name=None):
+    def write(self, split, metric_name=None, tag=None):
         metric_name = self.metric.metric_name[split] if metric_name is None else metric_name
-        names = ['{}/{}'.format(split, k) for k in metric_name]
+        if tag is None:
+            names = ['{}/{}'.format(split, k) for k in metric_name]
+        else:
+            names = ['{}/{}/{}'.format(split, tag, k) for k in metric_name]
         evaluation_info = []
         for name in names:
-            split, k = name.split('/')
+            name_list = name.split('/')
+            split, k = name_list[0], name_list[-1]
             if isinstance(self.mean[name], Number):
                 s = self.mean[name]
                 evaluation_info.append('{}: {:.4f}'.format(k, s))

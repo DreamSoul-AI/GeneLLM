@@ -43,6 +43,7 @@ class Base(nn.Module):
             loss = 0
             unique_task_idx = torch.unique(input['task_idx'])
             output['pred'] = {}
+            output['loss_task'] = {}
             # TODO: need more efficient implementation
             for i in range(len(unique_task_idx)):
                 task_idx = unique_task_idx[i].item()
@@ -52,6 +53,7 @@ class Base(nn.Module):
                 output['pred'][task_idx] = target_i
                 loss_i = self.loss(output_i, target_i, reduction='sum')
                 loss += loss_i
+                output['loss_task'][task_idx] = loss_i / len(output_i)
             output['loss'] = loss / len(encoder_outputs)
         return output
 

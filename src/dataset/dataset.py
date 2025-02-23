@@ -113,7 +113,7 @@ def make_data_loader(dataset, batch_size, num_steps=None, step=0, step_period=1,
                                             collate_fn=make_data_collate(collate_mode),
                                             worker_init_fn=np.random.seed(seed))
             else:
-                data_loader[k] = DataLoader(dataset=dataset[k], batch_size=batch_size[k], shuffle=True,
+                data_loader[k] = DataLoader(dataset=dataset[k], batch_size=batch_size[k], shuffle=True, # TODO： change to False later
                                             pin_memory=pin_memory, num_workers=num_workers,
                                             collate_fn=make_data_collate(collate_mode),
                                             worker_init_fn=np.random.seed(seed))
@@ -141,15 +141,16 @@ def process_dataset(dataset, tokenizer=None):
 
     if isinstance(processed_dataset['train'], list):
         if cfg['model']['num_targets'] == 1:
-            data_size = processed_dataset['train'][0].data_size
+            data_size = [cfg['model']['task_max_length'][processed_dataset['train'][0].task_name]]
             target_size = processed_dataset['train'][0].target_size
         else:
-            data_size = {} # TODO: this seems has error
+            data_size = {}
             target_size = {}
             for k in processed_dataset:
                 for i in range(len(processed_dataset[k])):
                     if processed_dataset[k][i].task_name not in data_size:
-                        data_size[processed_dataset[k][i].task_name] = processed_dataset[k][i].data_size
+                        data_size[processed_dataset[k][i].task_name] = \
+                            [cfg['model']['task_max_length'][processed_dataset[k][i].task_name]]
                     if processed_dataset[k][i].task_name not in target_size:
                         target_size[processed_dataset[k][i].task_name] = processed_dataset[k][i].target_size
         if tokenizer is not None:

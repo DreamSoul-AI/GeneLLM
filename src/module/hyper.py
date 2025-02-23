@@ -9,8 +9,8 @@ def process_control():
 
     cfg['batch_size'] = 8
     cfg['step_period'] = 1
-    cfg['num_steps'] = 30
-    cfg['eval_period'] = 30
+    cfg['num_steps'] = 1
+    cfg['eval_period'] = 1
     cfg['eval'] = {}
     cfg['eval']['num_steps'] = 30
     # cfg['num_epochs'] = 5
@@ -34,14 +34,15 @@ def process_control():
     cfg['model']['task_names'] = cfg['task_names']
     cfg['model']['subset_names'] = cfg['subset_names']
     cfg['model']['dnabert2'] = {'hidden_size': 768}
-    # TODO: this inconsistent with data size
-    max_length = {'EMP': 128, 'mouse': 30, 'promcore': 20, 'prom300': 70, 'splice': 80, 'tf': 30, 'virus': 256}
     cfg['model']['padding_side'] = 'right'
     cfg['model']['freeze'] = False
+    # https://github.com/MAGICS-LAB/DNABERT_2/blob/main/finetune/scripts/run_dnabert2.sh
+    task_max_length = {'EMP': 128, 'mouse': 30, 'promcore': 20, 'prom300': 70, 'splice': 80, 'tf': 30, 'virus': 256}
+    cfg['model']['task_max_length'] = task_max_length
     if cfg['task_name'] == -1:
-        cfg['model']['max_length'] = max(list(max_length.values()))
+        cfg['model']['max_length'] = max(list(cfg['model']['task_max_length'].values()))
     else:
-        cfg['model']['max_length'] = max_length[cfg['task_name']]
+        cfg['model']['max_length'] = cfg['model']['task_max_length'][cfg['task_name']]
     if cfg['task_name'] == -1:
         cfg['model']['num_targets'] = len(cfg['task_names'])
     else:

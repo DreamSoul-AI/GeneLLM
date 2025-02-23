@@ -129,11 +129,20 @@ def test(data_loader, model, logger):
             input_size = len(input[list(input.keys())[0]])
             input = to_device(input, cfg['device'])
             output = model(**input)
-            evaluation = logger.evaluate('test', 'batch', input, output)
-            logger.append(evaluation, 'test', input_size)
-            logger.add('test', input, output)
+            unique_task_idx = torch.unique(input['task_idx'])
+            for i in range(len(unique_task_idx)): # TODO: give up online all dataset evaluation, just use loss here, test later for all datasets
+                print(i)
+                task_idx = unique_task_idx[i].item()
+                mask_i = input['task_idx'] == task_idx
+                input_i = {'target': input['target'][mask_i]}
+                output_i = {'pred': output['pred'][task_idx], 'loss': output['loss_task'][task_idx]}
+                evaluation_i = logger.evaluate('test', 'batch', input_i, output_i)
+                tag_i = str(task_idx)
+                logger.append(evaluation_i, 'test', input_size, tag=tag_i)
+                logger.add('test', input_i, output_i)
             if (i + 1) == num_steps:
                 break
+        exit()
         evaluation = logger.evaluate('test', 'full')
         logger.append(evaluation, 'test', input_size)
         info = {'info': ['Model: {}'.format(cfg['tag']),
