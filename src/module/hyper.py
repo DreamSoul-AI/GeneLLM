@@ -9,8 +9,8 @@ def process_control():
 
     cfg['batch_size'] = 8
     cfg['step_period'] = 1
-    cfg['num_steps'] = 1
-    cfg['eval_period'] = 1
+    cfg['num_steps'] = 30
+    cfg['eval_period'] = 30
     cfg['eval'] = {}
     cfg['eval']['num_steps'] = 30
     # cfg['num_epochs'] = 5

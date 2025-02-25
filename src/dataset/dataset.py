@@ -120,7 +120,7 @@ def make_data_loader(dataset, batch_size, num_steps=None, step=0, step_period=1,
     return data_loader
 
 
-def process_dataset(dataset, tokenizer=None):
+def process_dataset(dataset, tokenizer=None, merge_test=True):
     def tokenize_transform(tokenizer, max_length):
         def transform(example):
             tokenized = tokenizer(
@@ -158,12 +158,27 @@ def process_dataset(dataset, tokenizer=None):
                 for i in range(len(processed_dataset[k])):
                     processed_dataset[k][i].transform = tokenize_transform(tokenizer, cfg['model']['max_length'])
         processed_dataset['train'] = torch.utils.data.ConcatDataset(processed_dataset['train'])
-        processed_dataset['valid'] = torch.utils.data.ConcatDataset(processed_dataset['valid'])
-        processed_dataset['test'] = torch.utils.data.ConcatDataset(processed_dataset['test'])
-        for k in processed_dataset:
-            processed_dataset[k].data_size = data_size
-            processed_dataset[k].target_size = target_size
-        cfg['num_samples'] = {k: len(processed_dataset[k]) for k in processed_dataset}
+        if merge_test:
+            processed_dataset['valid'] = torch.utils.data.ConcatDataset(processed_dataset['valid'])
+            processed_dataset['test'] = torch.utils.data.ConcatDataset(processed_dataset['test'])
+            cfg['num_samples'] = {}
+            for k in processed_dataset:
+                processed_dataset[k].data_size = data_size
+                processed_dataset[k].target_size = target_size
+                cfg['num_samples'][k] = len(processed_dataset[k])
+        else:
+            cfg['num_samples'] = {}
+            for k in processed_dataset:
+                if k == 'train':
+                    processed_dataset[k].data_size = data_size
+                    processed_dataset[k].target_size = target_size
+                    cfg['num_samples'][k] = len(processed_dataset[k])
+                else:
+                    cfg['num_samples'][k] = []
+                    for i in range(len(processed_dataset[k])):
+                        processed_dataset[k][i].data_size = data_size
+                        processed_dataset[k][i].target_size = target_size
+                        cfg['num_samples'][k].append(len(processed_dataset[k]))
         cfg['model']['data_size'] = processed_dataset['train'].data_size
         cfg['model']['target_size'] = processed_dataset['train'].target_size
     else:

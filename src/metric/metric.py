@@ -5,12 +5,23 @@ from sklearn.metrics import f1_score, matthews_corrcoef
 
 def make_metric(split, **kwargs):
     data_name = kwargs['data_name']
+    run_mode = kwargs['run_mode']
     metric_name = {k: [] for k in split}
     if data_name in ['GUE']:
         best_direction = 'down'
         best_metric_name = 'Loss'
-        for k in metric_name:
-            metric_name[k].extend(['Loss', 'F1', 'MCC'])
+        if run_mode == 'train':
+            for k in metric_name:
+                if k == 'train':
+                    metric_name[k].extend(['Loss'])
+                else:
+                    metric_name[k].extend(['Loss'])
+        else:
+            for k in metric_name:
+                if k == 'train':
+                    metric_name[k].extend(['Loss'])
+                else:
+                    metric_name[k].extend(['Loss', 'F1', 'MCC'])
     else:
         raise ValueError('Not valid data name')
     metric = Metric(metric_name, best_direction, best_metric_name)
@@ -148,15 +159,7 @@ class Metric:
                 if key not in self.buffer['output']:
                     self.buffer['output'][key] = output[key]
                 else:
-                    if isinstance(output[key], dict):
-                        for name in output[key]:
-                            if name not in self.buffer['output'][key]:
-                                self.buffer['output'][key][name] = output[key][name]
-                            else:
-                                self.buffer['output'][key][name] = \
-                                    torch.cat([self.buffer['output'][key][name], output[key][name]], dim=0)
-                    else:
-                        self.buffer['output'][key] = torch.cat([self.buffer['output'][key], output[key]], dim=0)
+                    self.buffer['output'][key] = torch.cat([self.buffer['output'][key], output[key]], dim=0)
         return
 
     def evaluate(self, split, mode, input=None, output=None, metric_name=None):

@@ -49,7 +49,7 @@ class Logger:
             if tag is None:
                 name = '{}/{}'.format(split, k)
             else:
-                name = '{}/{}/{}'.format(split, tag, k)
+                name = '{}/{}/{}'.format(split, k, tag)
             self.tracker[name] = result[k]
             if isinstance(result[k], Number):
                 self.counter[name] += n
@@ -75,7 +75,7 @@ class Logger:
         evaluation_info = []
         for name in names:
             name_list = name.split('/')
-            split, k = name_list[0], name_list[-1]
+            split, k = name_list[0], name_list[1]
             if isinstance(self.mean[name], Number):
                 s = self.mean[name]
                 evaluation_info.append('{}: {:.4f}'.format(k, s))
