@@ -5,6 +5,7 @@ from sklearn.metrics import f1_score, matthews_corrcoef
 
 def make_metric(split, **kwargs):
     data_name = kwargs['data_name']
+    task_name = kwargs['task_name']
     run_mode = kwargs['run_mode']
     metric_name = {k: [] for k in split}
     if data_name in ['GUE']:
@@ -15,7 +16,10 @@ def make_metric(split, **kwargs):
                 if k == 'train':
                     metric_name[k].extend(['Loss'])
                 else:
-                    metric_name[k].extend(['Loss'])
+                    if task_name == 'all':
+                        metric_name[k].extend(['Loss'])
+                    else:
+                        metric_name[k].extend(['Loss', 'F1', 'MCC'])
         else:
             for k in metric_name:
                 if k == 'train':

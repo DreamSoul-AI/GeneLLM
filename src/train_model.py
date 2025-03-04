@@ -50,13 +50,15 @@ def runExperiment():
         model = model.to(cfg['device'])
         optimizer = make_optimizer(model.parameters(), cfg[cfg['tag']]['optimizer'])
         scheduler = make_scheduler(optimizer, cfg[cfg['tag']]['optimizer'])
-        logger = make_logger(cfg['logger_path'], data_name=cfg['data_name'], run_mode='train')
+        logger = make_logger(cfg['logger_path'], data_name=cfg['data_name'], task_name=cfg['task_name'],
+                             run_mode='train')
     else:
         cfg['step'] = result['cfg']['step']
         model = model.to(cfg['device'])
         optimizer = make_optimizer(model.parameters(), cfg[cfg['tag']]['optimizer'])
         scheduler = make_scheduler(optimizer, cfg[cfg['tag']]['optimizer'])
-        logger = make_logger(cfg['logger_path'], data_name=cfg['data_name'], run_mode='train')
+        logger = make_logger(cfg['logger_path'], data_name=cfg['data_name'], task_name=cfg['task_name'],
+                             run_mode='train')
         model.load_state_dict(result['model'])
         optimizer.load_state_dict(result['optimizer'])
         scheduler.load_state_dict(result['scheduler'])
@@ -119,6 +121,7 @@ def train(data_loader, model, optimizer, scheduler, logger):
             if (idx + 1) % cfg['eval_period'] == 0 and (i + 1) % cfg['step_period'] == 0:
                 break
     return
+
 
 def test(data_loader, model, logger):
     with torch.no_grad():

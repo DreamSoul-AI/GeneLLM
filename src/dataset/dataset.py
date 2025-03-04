@@ -15,7 +15,7 @@ def make_dataset(data_name, verbose=True, **kwargs):
     if data_name in ['GUE']:
         task_name = kwargs['task_name']
         subset_name = kwargs['subset_name']
-        if task_name == -1:
+        if task_name == 'all':
             task_names = list(cfg['subset_names'].keys())
             dataset_ = {'train': [], 'valid': [], 'test': []}
             for task_name_i in task_names:
@@ -31,7 +31,7 @@ def make_dataset(data_name, verbose=True, **kwargs):
                     dataset_['valid'].append(dataset_valid)
                     dataset_['test'].append(dataset_test)
         else:
-            if subset_name == '-1':
+            if subset_name == 'all':
                 dataset_ = {'train': [], 'valid': [], 'test': []}
                 subset_names = cfg['subset_names'][task_name]
                 for subset_name_i in subset_names:
@@ -113,7 +113,7 @@ def make_data_loader(dataset, batch_size, num_steps=None, step=0, step_period=1,
                                             collate_fn=make_data_collate(collate_mode),
                                             worker_init_fn=np.random.seed(seed))
             else:
-                data_loader[k] = DataLoader(dataset=dataset[k], batch_size=batch_size[k], shuffle=True, # TODO： change to False later
+                data_loader[k] = DataLoader(dataset=dataset[k], batch_size=batch_size[k], shuffle=False,
                                             pin_memory=pin_memory, num_workers=num_workers,
                                             collate_fn=make_data_collate(collate_mode),
                                             worker_init_fn=np.random.seed(seed))

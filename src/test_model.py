@@ -56,7 +56,8 @@ def runExperiment():
             cfg['logger_path'] = os.path.join('output', 'logger', 'test', 'runs', tag_i)
             dataset_i = {'test': dataset['test'][i]}
             data_loader = make_data_loader(dataset_i, cfg[cfg['tag']]['optimizer']['batch_size'])
-            test_logger = make_logger(cfg['logger_path'], data_name=cfg['data_name'], run_mode='test')
+            test_logger = make_logger(cfg['logger_path'], data_name=cfg['data_name'], task_name=cfg['task_name'],
+                                      run_mode='test')
             test(data_loader['test'], model, test_logger, task_name, subset_name, task_idx)
             result = resume(cfg['checkpoint_path'])
             result = {'cfg': cfg, 'logger': {'train': result['logger'], 'test': test_logger.state_dict()}}
@@ -66,7 +67,8 @@ def runExperiment():
         subset_name = dataset['test'][i].subset_name
         task_idx = dataset['test'][i].task_idx
         data_loader = make_data_loader(dataset, cfg[cfg['tag']]['optimizer']['batch_size'])
-        test_logger = make_logger(cfg['logger_path'], data_name=cfg['data_name'], run_mode='test')
+        test_logger = make_logger(cfg['logger_path'], data_name=cfg['data_name'], task_name=cfg['task_name'],
+                                  run_mode='test')
         test(data_loader['test'], model, test_logger, task_name, subset_name, task_idx)
         result = resume(cfg['checkpoint_path'])
         result = {'cfg': cfg, 'logger': {'train': result['logger'], 'test': test_logger.state_dict()}}

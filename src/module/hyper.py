@@ -13,7 +13,7 @@ def process_control():
     cfg['eval_period'] = 30
     cfg['eval'] = {}
     cfg['eval']['num_steps'] = 30
-    # cfg['num_epochs'] = 5
+    cfg['num_epochs'] = 5
     cfg['collate_mode'] = 'dict'
 
     cfg['task_names'] = ['EMP', 'mouse', 'promcore', 'prom300', 'splice', 'tf', 'virus']
@@ -39,11 +39,11 @@ def process_control():
     # https://github.com/MAGICS-LAB/DNABERT_2/blob/main/finetune/scripts/run_dnabert2.sh
     task_max_length = {'EMP': 128, 'mouse': 30, 'promcore': 20, 'prom300': 70, 'splice': 80, 'tf': 30, 'virus': 256}
     cfg['model']['task_max_length'] = task_max_length
-    if cfg['task_name'] == -1:
+    if cfg['task_name'] == 'all':
         cfg['model']['max_length'] = max(list(cfg['model']['task_max_length'].values()))
     else:
         cfg['model']['max_length'] = cfg['model']['task_max_length'][cfg['task_name']]
-    if cfg['task_name'] == -1:
+    if cfg['task_name'] == 'all':
         cfg['model']['num_targets'] = len(cfg['task_names'])
     else:
         cfg['model']['num_targets'] = 1
