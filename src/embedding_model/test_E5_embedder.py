@@ -1,5 +1,5 @@
 import torch.nn.functional as F
-from torch import Tensor
+import torch
 from transformers import AutoTokenizer, AutoModel
 
 # dataset descriptions
@@ -53,3 +53,16 @@ batch_dict = tokenizer(batch_input_texts, max_length=512, padding=True, truncati
 
 outputs = model(**batch_dict)
 embeddings = outputs.last_hidden_state
+
+
+# create embedding dic embeddings_named 
+dataset_names = ['EMP', 'mouse', 'prom300', 'promcore', 'splice', 'tf', 'virus']
+embeddings_named = {name:  # name of the dataset
+                    {'embedding_seq': embeddings[i],   # embedding seq with paddings
+                     'attention_mask': batch_dict['attention_mask'][i],  # attention_mask for this embedding seq 
+                     'pooler_output': outputs.pooler_output[i]}  # pooler_output for this embedding seq(CLS embedding)  
+                    for i, name in enumerate(dataset_names)}
+
+# save embeddings_named
+torch.save(embeddings_named, "/workspaces/GeneLLM/src/dataset/description_embedding/embeddings.pth")
+
