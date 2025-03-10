@@ -12,7 +12,8 @@ parser.add_argument('--experiment_step', default=1, type=int)
 parser.add_argument('--num_experiments', default=1, type=int)
 parser.add_argument('--resume_mode', default=0, type=int)
 parser.add_argument('--split_round', default=65535, type=int)
-parser.add_argument('--mode', default=None, type=str)
+parser.add_argument('--task_name', default=None, type=str)
+parser.add_argument('--subset_name', default=None, type=str)
 args = vars(parser.parse_args())
 
 
@@ -35,7 +36,8 @@ def main():
     init_seed = args['init_seed']
     num_experiments = args['num_experiments']
     resume_mode = args['resume_mode']
-    mode = args['mode']
+    task_name = args['task_name']
+    subset_name = args['subset_name']
     split_round = args['split_round']
     script_path = os.path.join('output', 'script')
     if num_gpus > 0:
@@ -44,15 +46,31 @@ def main():
     init_seeds = [list(range(init_seed, init_seed + num_experiments, experiment_step))]
     num_experiments = [[experiment_step]]
     resume_mode = [[resume_mode]]
-    filename = '{}_{}'.format(run, mode)
-    if mode == 'base':
-        script_name = [['{}_model.py'.format(run)]]
-        data_name = ['MNIST', 'CIFAR10']
-        model_name = ['linear', 'mlp', 'cnn', 'resnet18']
-        control_name = [[data_name, model_name]]
-        controls = make_controls(script_name, init_seeds, num_experiments, resume_mode, control_name)
+    filename = '{}_{}_{}'.format(run, task_name, subset_name)
+
+    subset_names = {
+        'EMP': ['H3', 'H3K4me1', 'H3K4me2', 'H3K4me3', 'H3K9ac', 'H3K14ac', 'H3K36me3', 'H3K79me3', 'H4', 'H4ac'],
+        # 'mouse': ['0', '1', '2', '3', '4'],
+        'mouse': ['Ch12Nrf2Iggrab', 'Ch12Znf384hpa004051Iggrab', 'MelJundIggrab', 'MelMafkDm2p5dStd', 'MelNelfeIggrab'],
+        'promcore': ['all', 'notata', 'tata'],
+        'prom300': ['all', 'notata', 'tata'],
+        'splice': ['reconstructed'],
+        # 'tf': ['0', '1', '2', '3', '4'],
+        'tf': ['wgEncodeEH000552', 'wgEncodeEH000606', 'wgEncodeEH001546', 'wgEncodeEH001776', 'wgEncodeEH002829'],
+        'virus': ['covid'],
+    }
+
+    script_name = [['{}_model.py'.format(run)]]
+    data_name = ['GUE']
+    task_name = [task_name]
+    if subset_name == 'split':
+        subset_name = subset_names[task_name[0]]
     else:
-        raise ValueError('Not valid mode')
+        subset_name = [subset_name]
+    model_name = ['dnabert2']
+    control_name = [[data_name, task_name, subset_name, model_name]]
+    controls = make_controls(script_name, init_seeds, num_experiments, resume_mode, control_name)
+
     s = '#!/bin/bash\n'
     j = 1
     k = 1
