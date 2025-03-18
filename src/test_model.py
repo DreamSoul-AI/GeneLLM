@@ -67,9 +67,9 @@ def runExperiment():
         subset_name = dataset['test'].subset_name
         task_idx = dataset['test'].task_idx
 
-        tag_i = '{}_{}_{}'.format(cfg['tag'], task_name, subset_name)
-        cfg['result_path'] = os.path.join('output', 'result', tag_i)
-        cfg['logger_path'] = os.path.join('output', 'logger', 'test', 'runs', tag_i)
+        tag = '{}_{}_{}'.format(cfg['tag'], task_name, subset_name)
+        cfg['result_path'] = os.path.join('output', 'result', tag)
+        cfg['logger_path'] = os.path.join('output', 'logger', 'test', 'runs', tag)
 
         data_loader = make_data_loader(dataset, cfg[cfg['tag']]['optimizer']['batch_size'])
         test_logger = make_logger(cfg['logger_path'], data_name=cfg['data_name'], task_name=cfg['task_name'],

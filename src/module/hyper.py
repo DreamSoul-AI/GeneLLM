@@ -33,6 +33,9 @@ def process_control():
     cfg['model']['model_name'] = cfg['model_name']
     cfg['model']['task_names'] = cfg['task_names']
     cfg['model']['subset_names'] = cfg['subset_names']
+    cfg['model']['task_name'] = cfg['task_name']
+    cfg['model']['subset_name'] = cfg['subset_name']
+
     cfg['model']['dnabert2'] = {'hidden_size': 768}
     cfg['model']['padding_side'] = 'right'
     cfg['model']['freeze'] = False
@@ -47,6 +50,7 @@ def process_control():
         cfg['model']['num_targets'] = len(cfg['task_names'])
     else:
         cfg['model']['num_targets'] = 1
+    cfg['model']['dataset_embedding_mode'] = 'index'
 
     # https://github.com/MAGICS-LAB/DNABERT_2/blob/main/finetune/train.py
     # https://github.com/MAGICS-LAB/DNABERT_2/blob/main/finetune/scripts/run_dnabert2.sh
@@ -59,8 +63,10 @@ def process_control():
     cfg[tag]['optimizer']['betas'] = (0.9, 0.999)
     cfg[tag]['optimizer']['weight_decay'] = 0.01
     cfg[tag]['optimizer']['nesterov'] = True
-    cfg[tag]['optimizer']['batch_size'] = {'train': cfg['batch_size'], 'valid': cfg['batch_size'],
-                                           'test': cfg['batch_size']}
+    cfg[tag]['optimizer']['test_batch_ratio'] = 4
+    cfg[tag]['optimizer']['batch_size'] = {'train': cfg['batch_size'],
+                                           'valid': cfg[tag]['optimizer']['test_batch_ratio'] * cfg['batch_size'],
+                                           'test': cfg[tag]['optimizer']['test_batch_ratio'] * cfg['batch_size']}
     cfg[tag]['optimizer']['step_period'] = cfg['step_period']
     cfg[tag]['optimizer']['num_steps'] = cfg['num_steps']
     # cfg[tag]['optimizer']['scheduler_name'] = 'LinearAnnealingLR'

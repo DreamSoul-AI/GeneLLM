@@ -48,7 +48,7 @@ class GUE(Dataset):
         other = {k: torch.tensor(self.other[k][index]) for k in self.other}
         input = {**input, **other}
         if self.transform is not None:
-            input = {**input, **self.transform(input['data'])}
+            input = self.transform(input)
         return input
 
     def __len__(self):

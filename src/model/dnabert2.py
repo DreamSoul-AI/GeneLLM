@@ -6,10 +6,10 @@ from transformers import AutoModel, AutoModelForSequenceClassification, AutoConf
 
 def dnabert2(cfg):
     cache_dir = os.path.join('output', 'cache')
-    cache_tokenizer_path = os.path.join(cache_dir, cfg['model_name'], 'tokenizer')
     cache_config_path = os.path.join(cache_dir, cfg['model_name'], 'config')
+    cache_tokenizer_path = os.path.join(cache_dir, cfg['model_name'], 'tokenizer')
     cache_model_path = os.path.join(cache_dir, cfg['model_name'], 'model')
-    local_files_only = {'tokenizer': False, 'config': False, 'model': False}
+    local_files_only = {'config': False, 'tokenizer': False, 'model': False}
     for key in local_files_only:
         if os.path.exists(os.path.join(cache_dir, cfg['model_name'], key)):
             local_files_only[key] = True

@@ -122,9 +122,9 @@ def make_data_loader(dataset, batch_size, num_steps=None, step=0, step_period=1,
 
 def process_dataset(dataset, tokenizer=None, merge_test=True):
     def tokenize_transform(tokenizer, max_length):
-        def transform(example):
+        def transform(input):
             tokenized = tokenizer(
-                example,
+                input['data'],
                 return_tensors="pt",
                 padding="max_length",
                 max_length=max_length,
@@ -133,11 +133,20 @@ def process_dataset(dataset, tokenizer=None, merge_test=True):
             tokenized['input_ids'] = tokenized['input_ids'].squeeze(0)
             tokenized['attention_mask'] = tokenized['attention_mask'].squeeze(0)
             del tokenized['token_type_ids']
-            return tokenized
+            input = {**input, **tokenized}
+            return input
 
         return transform
 
+    def dataset_index_transform(input):
+        #TODO: add dataset_index
+        return input
+
     processed_dataset = dataset
+
+    from dataset.utils import Compose
+
+
 
     if isinstance(processed_dataset['train'], list):
         if cfg['model']['num_targets'] == 1:
@@ -156,7 +165,10 @@ def process_dataset(dataset, tokenizer=None, merge_test=True):
         if tokenizer is not None:
             for k in processed_dataset:
                 for i in range(len(processed_dataset[k])):
-                    processed_dataset[k][i].transform = tokenize_transform(tokenizer, cfg['model']['max_length'])
+                    # processed_dataset[k][i].transform = tokenize_transform(tokenizer, cfg['model']['max_length'])
+                    processed_dataset[k][i].transform = Compose([
+                        dataset_index_transform,
+                        tokenize_transform(tokenizer, cfg['model']['max_length'])])
         processed_dataset['train'] = torch.utils.data.ConcatDataset(processed_dataset['train'])
         if merge_test:
             processed_dataset['valid'] = torch.utils.data.ConcatDataset(processed_dataset['valid'])
@@ -187,19 +199,20 @@ def process_dataset(dataset, tokenizer=None, merge_test=True):
         cfg['model']['target_size'] = processed_dataset['train'].target_size
         if tokenizer is not None:
             for k in processed_dataset:
-                processed_dataset[k].transform = tokenize_transform(tokenizer, cfg['model']['max_length'])
+                processed_dataset[k].transform = Compose([
+                    dataset_index_transform,
+                    tokenize_transform(tokenizer, cfg['model']['max_length'])])
+
+
+
 
     if 'num_epochs' in cfg:
+        if cfg['batch_size'] > len(processed_dataset['train']):
+            cfg['batch_size'] = len(processed_dataset['train'])
+            cfg[cfg['tag']]['optimizer']['batch_size'] = {'train': cfg['batch_size'],
+                                                          'test': cfg[cfg['tag']]['optimizer']['test_batch_ratio'] *
+                                                                  cfg['batch_size']}
         cfg['num_steps'] = int(np.ceil(len(processed_dataset['train']) / cfg['batch_size'])) * cfg['num_epochs']
         cfg['eval_period'] = int(np.ceil(len(processed_dataset['train']) / cfg['batch_size']))
         cfg[cfg['tag']]['optimizer']['num_steps'] = cfg['num_steps']
-
-    # data_size = dataset_['train'][0].data_size
-    # target_size = dataset_['train'][0].target_size
-    # dataset_['train'] = torch.utils.data.ConcatDataset(dataset_['train'])
-    # dataset_['valid'] = torch.utils.data.ConcatDataset(dataset_['valid'])
-    # dataset_['test'] = torch.utils.data.ConcatDataset(dataset_['test'])
-    # for split in dataset_:
-    #     dataset_[split].data_size = data_size
-    #     dataset_[split].target_size = target_size
     return processed_dataset
