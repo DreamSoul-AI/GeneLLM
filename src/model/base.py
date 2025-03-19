@@ -5,12 +5,13 @@ from .loss import make_loss
 
 
 class Base(nn.Module):
-    def __init__(self, model, hidden_size, target_size, num_targets, task_names, subset_names, task_name, subset_name,
-                 freeze, dataset_embedding_mode):
+    def __init__(self, model, hidden_size, target_size, num_datasets, num_targets, task_names, subset_names, task_name,
+                 subset_name, freeze, dataset_embedding_mode):
         super().__init__()
         self.model = model
         self.hidden_size = hidden_size
         self.target_size = target_size
+        self.num_datasets = num_datasets
         self.num_targets = num_targets
         self.task_names = task_names
         self.subset_names = subset_names
@@ -37,33 +38,13 @@ class Base(nn.Module):
         return
 
     def make_dataset_embedding(self):
-        # dataset_embedding_indices = {}
-        # index = 0
-        # for task_name in self.subset_names:
-        #     task_index = self.task_names.index(task_name)
-        #     for subset_name in self.subset_names[task_name]:
-        #         subset_index = self.subset_names[task_name].index(subset_name)
-        #         index_name = '{}.{}'.format(task_index, subset_index)
-        #         dataset_embedding_indices[index_name] = index
-        #         index += 1
         if self.dataset_embedding_mode == 'index':
-            if self.task_name == 'all':
-                num_subsets = 0
-                for task_name in self.subset_names:
-                    num_subsets += len(self.subset_names[task_name])
-            else:
-                if self.subset_name == 'all':
-                    num_subsets = len(self.subset_names[self.task_name])
-                else:
-                    num_subsets = 1
-            dataset_embedding = nn.Embedding(num_subsets, self.hidden_size)
+            dataset_embedding = nn.Embedding(self.num_datasets, self.hidden_size)
         else:
             dataset_embedding = None
         return dataset_embedding
 
     def forward(self, **input):
-        print(input)
-        exit()
         output = {}
         # https://github.com/mosaicml/examples/blob/main/examples/benchmarks/bert/src/bert_layers.py
         with torch.no_grad():
@@ -99,6 +80,7 @@ class Base(nn.Module):
 def base(model, cfg):
     hidden_size = cfg[cfg['model_name']]['hidden_size']
     target_size = cfg['target_size']
+    num_datasets = cfg['num_datasets']
     num_targets = cfg['num_targets']
     task_names = cfg['task_names']
     subset_names = cfg['subset_names']
@@ -106,6 +88,6 @@ def base(model, cfg):
     subset_name = cfg['subset_name']
     freeze = cfg['freeze']
     dataset_embedding_mode = cfg['dataset_embedding_mode']
-    model = Base(model, hidden_size, target_size, num_targets, task_names, subset_names, task_name, subset_name,
-                 freeze, dataset_embedding_mode)
+    model = Base(model, hidden_size, target_size, num_datasets, num_targets, task_names, subset_names, task_name,
+                 subset_name, freeze, dataset_embedding_mode)
     return model

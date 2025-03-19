@@ -4,6 +4,7 @@ import os
 import torch
 from torch.utils.data import DataLoader
 from torch.utils.data.dataloader import default_collate
+from dataset.utils import Compose
 from module import apply_recursively
 from config import cfg
 
@@ -139,13 +140,17 @@ def process_dataset(dataset, tokenizer=None, merge_test=True):
         return transform
 
     def dataset_index_transform(input):
-        #TODO: add dataset_index
+        if cfg['task_name'] == 'all':
+            input['dataset_idx'] = torch.tensor(cfg['dataset_indices'][(input['task_idx'].item(),
+                                                                        input['subset_idx'].item())])
+        else:
+            if cfg['subset_name'] == 'all':
+                input['dataset_idx'] = input['subset_idx']
+            else:
+                input['dataset_idx'] = torch.tensor(0)
         return input
 
     processed_dataset = dataset
-
-    from dataset.utils import Compose
-
 
 
     if isinstance(processed_dataset['train'], list):
@@ -202,9 +207,6 @@ def process_dataset(dataset, tokenizer=None, merge_test=True):
                 processed_dataset[k].transform = Compose([
                     dataset_index_transform,
                     tokenize_transform(tokenizer, cfg['model']['max_length'])])
-
-
-
 
     if 'num_epochs' in cfg:
         if cfg['batch_size'] > len(processed_dataset['train']):

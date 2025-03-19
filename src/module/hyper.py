@@ -6,6 +6,8 @@ def process_control():
     cfg['task_name'] = cfg['control']['task_name']
     cfg['subset_name'] = str(cfg['control']['subset_name'])
     cfg['model_name'] = cfg['control']['model_name']
+    cfg['freeze'] = int(cfg['control']['freeze'])
+    cfg['embedding_mode'] = cfg['control']['embedding_mode']
 
     cfg['batch_size'] = 8
     cfg['step_period'] = 1
@@ -28,6 +30,16 @@ def process_control():
         'tf': ['wgEncodeEH000552', 'wgEncodeEH000606', 'wgEncodeEH001546', 'wgEncodeEH001776', 'wgEncodeEH002829'],
         'virus': ['covid'],
     }
+    dataset_indices = {}
+    index = 0
+    for task_name in cfg['subset_names']:
+        task_index = cfg['task_names'].index(task_name)
+        for subset_name in cfg['subset_names'][task_name]:
+            subset_index = cfg['subset_names'][task_name].index(subset_name)
+            index_name = (task_index, subset_index)
+            dataset_indices[index_name] = index
+            index += 1
+    cfg['dataset_indices'] = dataset_indices
 
     cfg['model'] = {}
     cfg['model']['model_name'] = cfg['model_name']
@@ -38,19 +50,22 @@ def process_control():
 
     cfg['model']['dnabert2'] = {'hidden_size': 768}
     cfg['model']['padding_side'] = 'right'
-    cfg['model']['freeze'] = False
     # https://github.com/MAGICS-LAB/DNABERT_2/blob/main/finetune/scripts/run_dnabert2.sh
     task_max_length = {'EMP': 128, 'mouse': 30, 'promcore': 20, 'prom300': 70, 'splice': 80, 'tf': 30, 'virus': 256}
     cfg['model']['task_max_length'] = task_max_length
     if cfg['task_name'] == 'all':
         cfg['model']['max_length'] = max(list(cfg['model']['task_max_length'].values()))
-    else:
-        cfg['model']['max_length'] = cfg['model']['task_max_length'][cfg['task_name']]
-    if cfg['task_name'] == 'all':
+        cfg['model']['num_datasets'] = sum(len(v) for v in cfg['subset_names'].values())
         cfg['model']['num_targets'] = len(cfg['task_names'])
     else:
+        if cfg['subset_name'] == 'all':
+            cfg['model']['num_datasets'] = len(cfg['subset_names'][cfg['task_name']])
+        else:
+            cfg['model']['num_datasets'] = 1
         cfg['model']['num_targets'] = 1
-    cfg['model']['dataset_embedding_mode'] = 'index'
+        cfg['model']['max_length'] = cfg['model']['task_max_length'][cfg['task_name']]
+    cfg['model']['freeze'] = cfg['freeze'] == 1
+    cfg['model']['embedding_mode'] = cfg['embedding_mode']
 
     # https://github.com/MAGICS-LAB/DNABERT_2/blob/main/finetune/train.py
     # https://github.com/MAGICS-LAB/DNABERT_2/blob/main/finetune/scripts/run_dnabert2.sh
