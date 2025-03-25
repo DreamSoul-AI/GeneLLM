@@ -3,11 +3,10 @@
 control:
   data_name: GUE
   task_name: mouse
-  subset_name: all
+  subset_name: Ch12Nrf2Iggrab
   model_name: dnabert2
-  freeze: 1
-  embedding_mode: index
-  # TODO add freeze and embedding index
+  freeze: 0
+  embedding_mode: none
 # experiment
 pin_memory: True
 num_workers: 0

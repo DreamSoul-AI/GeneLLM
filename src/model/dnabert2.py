@@ -15,11 +15,13 @@ def dnabert2(cfg):
             local_files_only[key] = True
     tokenizer = AutoTokenizer.from_pretrained("zhihan1996/DNABERT-2-117M", trust_remote_code=True,
                                               cache_dir=cache_tokenizer_path,
+                                              model_max_length=cfg['task_max_length'],
                                               local_files_only=local_files_only['tokenizer'],
                                               use_fast=True, padding_side=cfg['padding_side'])
     config = BertConfig.from_pretrained("zhihan1996/DNABERT-2-117M",
                                         cache_dir=cache_config_path, local_files_only=local_files_only['config'])
-
+    config.torch_dtype = cfg['torch_dtype']
     model = AutoModel.from_pretrained("zhihan1996/DNABERT-2-117M", trust_remote_code=True, config=config,
-                                      cache_dir=cache_model_path, local_files_only=local_files_only['model'])
+                                      cache_dir=cache_model_path, local_files_only=local_files_only['model'],
+                                      torch_dtype=cfg['torch_dtype'])
     return model, tokenizer

@@ -14,6 +14,7 @@ def make_core(cfg):
 def make_model(core, tokenizer, cfg):
     base = model.base(core, cfg)
     base.tokenizer = tokenizer
+    base = base.to(cfg['torch_dtype'])
     return base
 
 

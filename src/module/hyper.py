@@ -1,3 +1,5 @@
+import torch
+
 from config import cfg
 
 
@@ -9,13 +11,22 @@ def process_control():
     cfg['freeze'] = int(cfg['control']['freeze'])
     cfg['embedding_mode'] = cfg['control']['embedding_mode']
 
-    cfg['batch_size'] = 8
+    batch_size = {'EMP': 8, 'mouse': 8, 'promcore': 8, 'prom300': 8, 'splice': 8, 'tf': 8, 'virus': 32}
+    if cfg['task_name'] == 'all':
+        cfg['num_epochs'] = max(list(batch_size.values()))
+    else:
+        cfg['batch_size'] = batch_size[cfg['task_name']]
     cfg['step_period'] = 1
     cfg['num_steps'] = 30
     cfg['eval_period'] = 30
     cfg['eval'] = {}
     cfg['eval']['num_steps'] = 30
-    cfg['num_epochs'] = 5
+    # promcore/300 all, notata = 4
+    num_epochs = {'EMP': 3, 'mouse': 5, 'promcore': 10, 'prom300': 10, 'splice': 5, 'tf': 3, 'virus': 8}
+    if cfg['task_name'] == 'all':
+        cfg['num_epochs'] = max(list(num_epochs.values()))
+    else:
+        cfg['num_epochs'] = num_epochs[cfg['task_name']]
     cfg['collate_mode'] = 'dict'
 
     cfg['task_names'] = ['EMP', 'mouse', 'promcore', 'prom300', 'splice', 'tf', 'virus']
@@ -50,8 +61,10 @@ def process_control():
 
     cfg['model']['dnabert2'] = {'hidden_size': 768}
     cfg['model']['padding_side'] = 'right'
+    cfg['model']['torch_dtype'] = torch.float32
     # https://github.com/MAGICS-LAB/DNABERT_2/blob/main/finetune/scripts/run_dnabert2.sh
     task_max_length = {'EMP': 128, 'mouse': 30, 'promcore': 20, 'prom300': 70, 'splice': 80, 'tf': 30, 'virus': 256}
+    # TODO: this max length may not be large enough
     cfg['model']['task_max_length'] = task_max_length
     if cfg['task_name'] == 'all':
         cfg['model']['max_length'] = max(list(cfg['model']['task_max_length'].values()))
@@ -73,7 +86,7 @@ def process_control():
     cfg[tag] = {}
     cfg[tag]['optimizer'] = {}
     cfg[tag]['optimizer']['optimizer_name'] = 'AdamW'
-    cfg[tag]['optimizer']['lr'] = 1e-3
+    cfg[tag]['optimizer']['lr'] = 3e-5
     cfg[tag]['optimizer']['momentum'] = 0.9
     cfg[tag]['optimizer']['betas'] = (0.9, 0.999)
     cfg[tag]['optimizer']['weight_decay'] = 0.01
@@ -84,7 +97,7 @@ def process_control():
                                            'test': cfg[tag]['optimizer']['test_batch_ratio'] * cfg['batch_size']}
     cfg[tag]['optimizer']['step_period'] = cfg['step_period']
     cfg[tag]['optimizer']['num_steps'] = cfg['num_steps']
-    # cfg[tag]['optimizer']['scheduler_name'] = 'LinearAnnealingLR'
-    cfg[tag]['optimizer']['scheduler_name'] = 'None'
-    # cfg[tag]['optimizer']['num_warmup_steps'] = 50
+    cfg[tag]['optimizer']['scheduler_name'] = 'LinearAnnealingLR'
+    # cfg[tag]['optimizer']['scheduler_name'] = 'None'
+    cfg[tag]['optimizer']['num_warmup_steps'] = 50
     return

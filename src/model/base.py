@@ -6,7 +6,7 @@ from .loss import make_loss
 
 class Base(nn.Module):
     def __init__(self, model, hidden_size, target_size, num_datasets, num_targets, task_names, subset_names, task_name,
-                 subset_name, freeze, dataset_embedding_mode):
+                 subset_name, freeze, embedding_mode):
         super().__init__()
         self.model = model
         self.hidden_size = hidden_size
@@ -19,7 +19,7 @@ class Base(nn.Module):
         self.subset_name = subset_name
         if freeze:
             self.freeze(self.model)
-        self.dataset_embedding_mode = dataset_embedding_mode
+        self.embedding_mode = embedding_mode
         self.dataset_embedding = self.make_dataset_embedding()
 
         if num_targets == 1:
@@ -38,10 +38,10 @@ class Base(nn.Module):
         return
 
     def make_dataset_embedding(self):
-        if self.dataset_embedding_mode == 'index':
+        if self.embedding_mode == 'index':
             dataset_embedding = nn.Embedding(self.num_datasets, self.hidden_size)
         else:
-            dataset_embedding = None
+            dataset_embedding = 'none'
         return dataset_embedding
 
     def forward(self, **input):
@@ -52,7 +52,7 @@ class Base(nn.Module):
             encoder_outputs, pooled_output = self.model(**valid_input)
         decoder_input = pooled_output
 
-        if self.dataset_embedding is not None:
+        if self.embedding_mode != 'none':
             decoder_input += self.dataset_embedding(input['dataset_idx'])
 
         if self.num_targets == 1:
@@ -87,7 +87,7 @@ def base(model, cfg):
     task_name = cfg['task_name']
     subset_name = cfg['subset_name']
     freeze = cfg['freeze']
-    dataset_embedding_mode = cfg['dataset_embedding_mode']
+    embedding_mode = cfg['embedding_mode']
     model = Base(model, hidden_size, target_size, num_datasets, num_targets, task_names, subset_names, task_name,
-                 subset_name, freeze, dataset_embedding_mode)
+                 subset_name, freeze, embedding_mode)
     return model

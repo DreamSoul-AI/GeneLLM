@@ -14,18 +14,18 @@ def make_metric(split, **kwargs):
         if run_mode == 'train':
             for k in metric_name:
                 if k == 'train':
-                    metric_name[k].extend(['Loss'])
+                    metric_name[k].extend(['Loss', 'Accuracy'])
                 else:
                     if task_name == 'all':
-                        metric_name[k].extend(['Loss'])
+                        metric_name[k].extend(['Loss', 'Accuracy'])
                     else:
-                        metric_name[k].extend(['Loss', 'F1', 'MCC'])
+                        metric_name[k].extend(['Loss', 'Accuracy', 'F1', 'MCC'])
         else:
             for k in metric_name:
                 if k == 'train':
-                    metric_name[k].extend(['Loss'])
+                    metric_name[k].extend(['Loss', 'Accuracy'])
                 else:
-                    metric_name[k].extend(['Loss', 'F1', 'MCC'])
+                    metric_name[k].extend(['Loss', 'Accuracy', 'F1', 'MCC'])
     else:
         raise ValueError('Not valid data name')
     metric = Metric(metric_name, best_direction, best_metric_name)

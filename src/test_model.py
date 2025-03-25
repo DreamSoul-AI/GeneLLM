@@ -56,9 +56,10 @@ def runExperiment():
             cfg['logger_path'] = os.path.join('output', 'logger', 'test', 'runs', tag_i)
             dataset_i = {'test': dataset['test'][i]}
             data_loader = make_data_loader(dataset_i, cfg[cfg['tag']]['optimizer']['batch_size'])
-            test_logger = make_logger(cfg['logger_path'], data_name=cfg['data_name'], task_name=cfg['task_name'],
-                                      run_mode='test')
-            test(data_loader['test'], model, test_logger, task_name, subset_name, task_idx)
+            test_logger = make_logger(cfg['logger_path'], split=['train', 'valid', 'test'], data_name=cfg['data_name'],
+                                      task_name=cfg['task_name'], run_mode='test')
+            test('valid', data_loader['valid'], model, test_logger, task_name, subset_name, task_idx)
+            test('test', data_loader['test'], model, test_logger, task_name, subset_name, task_idx)
             result = resume(cfg['checkpoint_path'])
             result = {'cfg': cfg, 'logger': {'train': result['logger'], 'test': test_logger.state_dict()}}
             save(result, cfg['result_path'])
@@ -66,22 +67,22 @@ def runExperiment():
         task_name = dataset['test'].task_name
         subset_name = dataset['test'].subset_name
         task_idx = dataset['test'].task_idx
-
         tag = '{}_{}_{}'.format(cfg['tag'], task_name, subset_name)
         cfg['result_path'] = os.path.join('output', 'result', tag)
         cfg['logger_path'] = os.path.join('output', 'logger', 'test', 'runs', tag)
 
         data_loader = make_data_loader(dataset, cfg[cfg['tag']]['optimizer']['batch_size'])
-        test_logger = make_logger(cfg['logger_path'], data_name=cfg['data_name'], task_name=cfg['task_name'],
-                                  run_mode='test')
-        test(data_loader['test'], model, test_logger, task_name, subset_name, task_idx)
+        test_logger = make_logger(cfg['logger_path'], split=['train', 'valid', 'test'], data_name=cfg['data_name'],
+                                  task_name=cfg['task_name'],run_mode='test')
+        test('valid', data_loader['valid'], model, test_logger, task_name, subset_name, task_idx)
+        test('test', data_loader['test'], model, test_logger, task_name, subset_name, task_idx)
         result = resume(cfg['checkpoint_path'])
         result = {'cfg': cfg, 'logger': {'train': result['logger'], 'test': test_logger.state_dict()}}
         save(result, cfg['result_path'])
     return
 
 
-def test(data_loader, model, logger, task_name, subset_name, task_idx):
+def test(subset, data_loader, model, logger, task_name, subset_name, task_idx):
     with torch.no_grad():
         model.train(False)
         for i, input in enumerate(data_loader):
@@ -89,15 +90,15 @@ def test(data_loader, model, logger, task_name, subset_name, task_idx):
             input = to_device(input, cfg['device'])
             input['test_task_idx'] = task_idx
             output = model(**input)
-            evaluation = logger.evaluate('test', 'batch', input, output)
-            logger.append(evaluation, 'test', input_size)
-            logger.add('test', input, output)
-        evaluation = logger.evaluate('test', 'full')
-        logger.append(evaluation, 'test', input_size)
+            evaluation = logger.evaluate(subset, 'batch', input, output)
+            logger.append(evaluation, subset, input_size)
+            logger.add(subset, input, output)
+        evaluation = logger.evaluate(subset, 'full')
+        logger.append(evaluation, subset, input_size)
         info = {'info': ['Model: {}({}, {})'.format(cfg['tag'], task_name, subset_name),
-                         'Test Epoch: {}({:.0f}%)'.format(cfg['step'] // cfg['eval_period'], 100.)]}
-        logger.append(info, 'test')
-        print(logger.write('test'))
+                         'Test Epoch (): {}({:.0f}%)'.format(subset, cfg['step'] // cfg['eval_period'], 100.)]}
+        logger.append(info, subset)
+        print(logger.write(subset))
         logger.save(True)
     return
 

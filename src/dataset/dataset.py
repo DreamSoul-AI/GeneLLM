@@ -129,7 +129,7 @@ def process_dataset(dataset, tokenizer=None, merge_test=True):
                 return_tensors="pt",
                 padding="max_length",
                 max_length=max_length,
-                truncation=False,
+                truncation=True,
             )
             tokenized['input_ids'] = tokenized['input_ids'].squeeze(0)
             tokenized['attention_mask'] = tokenized['attention_mask'].squeeze(0)

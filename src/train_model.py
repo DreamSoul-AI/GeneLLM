@@ -50,15 +50,15 @@ def runExperiment():
         model = model.to(cfg['device'])
         optimizer = make_optimizer(model.parameters(), cfg[cfg['tag']]['optimizer'])
         scheduler = make_scheduler(optimizer, cfg[cfg['tag']]['optimizer'])
-        logger = make_logger(cfg['logger_path'], data_name=cfg['data_name'], task_name=cfg['task_name'],
-                             run_mode='train')
+        logger = make_logger(cfg['logger_path'], split=['train', 'valid', 'test'], data_name=cfg['data_name'],
+                             task_name=cfg['task_name'], run_mode='train')
     else:
         cfg['step'] = result['cfg']['step']
         model = model.to(cfg['device'])
         optimizer = make_optimizer(model.parameters(), cfg[cfg['tag']]['optimizer'])
         scheduler = make_scheduler(optimizer, cfg[cfg['tag']]['optimizer'])
-        logger = make_logger(cfg['logger_path'], data_name=cfg['data_name'], task_name=cfg['task_name'],
-                             run_mode='train')
+        logger = make_logger(cfg['logger_path'], split=['train', 'valid', 'test'], data_name=cfg['data_name'],
+                             task_name=cfg['task_name'], run_mode='train')
         model.load_state_dict(result['model'])
         optimizer.load_state_dict(result['optimizer'])
         scheduler.load_state_dict(result['scheduler'])
@@ -70,7 +70,8 @@ def runExperiment():
     data_iterator = enumerate(data_loader['train'])
     while cfg['step'] < cfg['num_steps']:
         train(data_iterator, model, optimizer, scheduler, logger)
-        test(data_loader['test'], model, logger)
+        test('valid', data_loader['valid'], model, logger)
+        test('test', data_loader['test'], model, logger)
         result = {'cfg': cfg, 'model': model.state_dict(),
                   'optimizer': optimizer.state_dict(), 'scheduler': scheduler.state_dict(),
                   'logger': logger.state_dict()}
@@ -123,7 +124,7 @@ def train(data_loader, model, optimizer, scheduler, logger):
     return
 
 
-def test(data_loader, model, logger):
+def test(subset, data_loader, model, logger):
     with torch.no_grad():
         model.train(False)
         num_steps = len(data_loader) if cfg['eval']['num_steps'] == -1 else cfg['eval']['num_steps']
@@ -131,17 +132,17 @@ def test(data_loader, model, logger):
             input_size = len(input[list(input.keys())[0]])
             input = to_device(input, cfg['device'])
             output = model(**input)
-            evaluation_i = logger.evaluate('test', 'batch', input, output)
-            logger.append(evaluation_i, 'test', input_size)
-            logger.add('test', input, output)
+            evaluation_i = logger.evaluate(subset, 'batch', input, output)
+            logger.append(evaluation_i, subset, input_size)
+            logger.add(subset, input, output)
             if (i + 1) == num_steps:
                 break
-        evaluation = logger.evaluate('test', 'full')
-        logger.append(evaluation, 'test', input_size)
+        evaluation = logger.evaluate(subset, 'full')
+        logger.append(evaluation, subset, input_size)
         info = {'info': ['Model: {}'.format(cfg['tag']),
-                         'Test Epoch: {}({:.0f}%)'.format(cfg['step'] // cfg['eval_period'], 100.)]}
-        logger.append(info, 'test')
-        print(logger.write('test'))
+                         'Test Epoch ({}): {}({:.0f}%)'.format(subset, cfg['step'] // cfg['eval_period'], 100.)]}
+        logger.append(info, subset)
+        print(logger.write(subset))
         logger.save(True)
     return
 
