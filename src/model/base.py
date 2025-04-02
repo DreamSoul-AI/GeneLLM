@@ -17,7 +17,8 @@ class Base(nn.Module):
         self.subset_names = subset_names
         self.task_name = task_name
         self.subset_name = subset_name
-        if freeze:
+        self.freeze = freeze
+        if self.freeze:
             self.freeze(self.model)
         self.embedding_mode = embedding_mode
         self.dataset_embedding = self.make_dataset_embedding()
@@ -47,9 +48,14 @@ class Base(nn.Module):
     def forward(self, **input):
         output = {}
         # https://github.com/mosaicml/examples/blob/main/examples/benchmarks/bert/src/bert_layers.py
-        with torch.no_grad():
-            valid_input = filter_args(self.model.forward, input)
+        valid_input = filter_args(self.model.forward, input)
+        # with torch.no_grad():
+        if self.freeze:
+            with torch.no_grad():
+                encoder_outputs, pooled_output = self.model(**valid_input)
+        else:
             encoder_outputs, pooled_output = self.model(**valid_input)
+        # decoder_input = encoder_outputs.mean(dim=1)
         decoder_input = pooled_output
 
         if self.embedding_mode != 'none':

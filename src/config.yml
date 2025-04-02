@@ -2,8 +2,8 @@
 # control
 control:
   data_name: GUE
-  task_name: mouse
-  subset_name: Ch12Nrf2Iggrab
+  task_name: EMP
+  subset_name: H3
   model_name: dnabert2
   freeze: 0
   embedding_mode: none

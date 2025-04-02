@@ -71,7 +71,7 @@ class F1(BaseMetric):
         with torch.no_grad():
             if pred.dtype != torch.int64:
                 pred = pred.argmax(dim=-1)
-            f1 = f1_score(target.cpu().numpy(), pred.cpu().numpy(), average='weighted')
+            f1 = f1_score(target.cpu().numpy(), pred.cpu().numpy(), average='macro', zero_division=0)
         return f1
 
 
@@ -178,7 +178,8 @@ class Metric:
         elif mode == 'full':
             for metric_name_i in metric_name[split]:
                 if self.mode[split][metric_name_i] == mode:
-                    input_ = {key: self.buffer['input'][key] for key in self.mode_keys[split][metric_name_i]['input']}
+                    input_ = {key: self.buffer['input'][key] for key in
+                              self.mode_keys[split][metric_name_i]['input']}
                     output_ = {key: self.buffer['output'][key] for key in
                                self.mode_keys[split][metric_name_i]['output']}
                     evaluation[metric_name_i] = self.metric[split][metric_name_i](**input_, **output_)
