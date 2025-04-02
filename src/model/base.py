@@ -49,7 +49,6 @@ class Base(nn.Module):
         output = {}
         # https://github.com/mosaicml/examples/blob/main/examples/benchmarks/bert/src/bert_layers.py
         valid_input = filter_args(self.model.forward, input)
-        # with torch.no_grad():
         if self.freeze:
             with torch.no_grad():
                 encoder_outputs, pooled_output = self.model(**valid_input)

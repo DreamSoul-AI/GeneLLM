@@ -11,8 +11,9 @@ def process_control():
     cfg['freeze'] = int(cfg['control']['freeze'])
     cfg['embedding_mode'] = cfg['control']['embedding_mode']
 
+    # virus may be 8
     # batch_size = {'EMP': 8, 'mouse': 8, 'promcore': 8, 'prom300': 8, 'splice': 8, 'tf': 8, 'virus': 32}
-    batch_size = {'EMP': 32, 'mouse': 32, 'promcore': 32, 'prom300': 32, 'splice': 32, 'tf': 32, 'virus': 32}
+    batch_size = {'EMP': 32, 'mouse': 32, 'promcore': 32, 'prom300': 32, 'splice': 32, 'tf': 32, 'virus': 128}
     if cfg['task_name'] == 'all':
         cfg['num_epochs'] = max(list(batch_size.values()))
     else:
