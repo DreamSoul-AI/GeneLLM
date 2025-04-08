@@ -14,6 +14,7 @@ parser.add_argument('--resume_mode', default=0, type=int)
 parser.add_argument('--split_round', default=65535, type=int)
 parser.add_argument('--task_name', default=None, type=str)
 parser.add_argument('--subset_name', default=None, type=str)
+parser.add_argument('--mode', default=None, type=str)
 args = vars(parser.parse_args())
 
 
@@ -36,9 +37,11 @@ def main():
     init_seed = args['init_seed']
     num_experiments = args['num_experiments']
     resume_mode = args['resume_mode']
+    split_round = args['split_round']
     task_name = args['task_name']
     subset_name = args['subset_name']
-    split_round = args['split_round']
+    mode = args['mode']
+
     script_path = os.path.join('output', 'script')
     if num_gpus > 0:
         gpu_ids = [','.join(str(i) for i in list(range(x, x + 1))) for x in
@@ -67,8 +70,18 @@ def main():
         subset_name = subset_names[task_name[0]]
     else:
         subset_name = [subset_name]
-    model_name = ['dnabert2']
-    control_name = [[data_name, task_name, subset_name, model_name]]
+    if mode == 'base':
+        model_name = ['dnabert2']
+        freeze = ['0']
+        embedding_mode = ['none']
+        control_name = [[data_name, task_name, subset_name, model_name, freeze, embedding_mode]]
+    elif mode == 'embedding':
+        model_name = ['dnabert2']
+        freeze = ['0']
+        embedding_mode = ['index', 'word']
+        control_name = [[data_name, task_name, subset_name, model_name, freeze, embedding_mode]]
+    else:
+        raise ValueError('Not valid mode')
     controls = make_controls(script_name, init_seeds, num_experiments, resume_mode, control_name)
 
     s = '#!/bin/bash\n'

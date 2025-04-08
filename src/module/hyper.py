@@ -29,6 +29,8 @@ def process_control():
         cfg['num_epochs'] = max(list(num_epochs.values()))
     else:
         cfg['num_epochs'] = num_epochs[cfg['task_name']]
+    # cfg['num_epochs'] = None  # for test
+
     cfg['collate_mode'] = 'dict'
 
     cfg['task_names'] = ['EMP', 'mouse', 'promcore', 'prom300', 'splice', 'tf', 'virus']
@@ -66,7 +68,6 @@ def process_control():
     cfg['model']['torch_dtype'] = torch.float32
     # https://github.com/MAGICS-LAB/DNABERT_2/blob/main/finetune/scripts/run_dnabert2.sh
     task_max_length = {'EMP': 128, 'mouse': 30, 'promcore': 20, 'prom300': 70, 'splice': 80, 'tf': 30, 'virus': 256}
-    # TODO: this max length may not be large enough
     cfg['model']['task_max_length'] = task_max_length
     if cfg['task_name'] == 'all':
         cfg['model']['max_length'] = max(list(cfg['model']['task_max_length'].values()))

@@ -170,7 +170,6 @@ def process_dataset(dataset, tokenizer=None, merge_test=True):
         if tokenizer is not None:
             for k in processed_dataset:
                 for i in range(len(processed_dataset[k])):
-                    # processed_dataset[k][i].transform = tokenize_transform(tokenizer, cfg['model']['max_length'])
                     processed_dataset[k][i].transform = Compose([
                         dataset_index_transform,
                         tokenize_transform(tokenizer, cfg['model']['max_length'])])
@@ -208,7 +207,7 @@ def process_dataset(dataset, tokenizer=None, merge_test=True):
                     dataset_index_transform,
                     tokenize_transform(tokenizer, cfg['model']['max_length'])])
 
-    if 'num_epochs' in cfg:
+    if 'num_epochs' in cfg and cfg['num_epochs'] is not None:
         if cfg['batch_size'] > len(processed_dataset['train']):
             cfg['batch_size'] = len(processed_dataset['train'])
             cfg[cfg['tag']]['optimizer']['batch_size'] = {'train': cfg['batch_size'],
