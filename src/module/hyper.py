@@ -29,7 +29,7 @@ def process_control():
         cfg['num_epochs'] = max(list(num_epochs.values()))
     else:
         cfg['num_epochs'] = num_epochs[cfg['task_name']]
-    # cfg['num_epochs'] = None  # for test
+    cfg['num_epochs'] = None  # for test
 
     cfg['collate_mode'] = 'dict'
 

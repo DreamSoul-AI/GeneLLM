@@ -1,10 +1,10 @@
+import shutil
 import os
 import torch
-import shutil
-from torchvision import transforms
+from transformers import AutoTokenizer, AutoModel
 from config import cfg
-from dataset import make_dataset, make_data_loader, process_dataset, Compose
-from module import save, Stats, makedir_exist_ok, process_control
+from dataset import make_dataset, make_data_loader, process_dataset
+from module import save, to_device, process_control
 
 
 def move_prom_datasets():
@@ -100,6 +100,39 @@ def move_tf_datasets():
     return
 
 
+def make_embeddings():
+    model_name = 'intfloat/multilingual-e5-large-instruct'
+    cache_dir = os.path.join('output', 'cache')
+    cache_tokenizer_path = os.path.join(cache_dir, model_name, 'tokenizer')
+    cache_model_path = os.path.join(cache_dir, model_name, 'model')
+    local_files_only = {'tokenizer': False, 'model': False}
+    for key in local_files_only:
+        if os.path.exists(os.path.join(cache_dir, model_name, key)):
+            local_files_only[key] = True
+    tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=cache_tokenizer_path,
+                                              local_files_only=local_files_only['tokenizer'])
+    model = AutoModel.from_pretrained(model_name, cache_dir=cache_model_path,
+                                      local_files_only=local_files_only['model'])
+    if torch.cuda.is_available():
+        model = model.to('cuda')
+
+    task_names = ['EMP', 'mouse', 'promcore', 'prom300', 'splice', 'tf', 'virus']
+    base_folder = os.path.join('data', 'GUE', 'description_embedding')
+    description_path = os.path.join(".", "dataset", "description")
+    for task_name in task_names:
+        task_file_path = os.path.join(description_path, f"{task_name}.txt")
+        with open(task_file_path, 'r') as f:
+            description_i = f.read().replace('\n', '')
+        input = tokenizer(description_i, return_tensors='pt')
+        if torch.cuda.is_available():
+            input = to_device(input, 'cuda')
+        with torch.no_grad():
+            output = model(**input)
+            output = to_device(output, 'cpu')
+        save(output, os.path.join(base_folder, task_name))
+    return
+
+
 if __name__ == "__main__":
     stats_path = os.path.join('output', 'stats')
     dim = 1
@@ -122,6 +155,7 @@ if __name__ == "__main__":
     move_prom_datasets()
     move_mouse_datasets()
     move_tf_datasets()
+    make_embeddings()
     with torch.no_grad():
         for data_name in data_names:
             for task_name in task_names:

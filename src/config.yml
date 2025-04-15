@@ -6,7 +6,7 @@ control:
   subset_name: H3
   model_name: dnabert2
   freeze: 0
-  embedding_mode: none
+  embedding_mode: word
 # experiment
 pin_memory: True
 num_workers: 0

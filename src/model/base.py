@@ -41,6 +41,8 @@ class Base(nn.Module):
     def make_dataset_embedding(self):
         if self.embedding_mode == 'index':
             dataset_embedding = nn.Embedding(self.num_datasets, self.hidden_size)
+        if self.embedding_mode == 'word':
+            dataset_embedding = nn.Embedding(self.num_datasets, self.hidden_size)
         else:
             dataset_embedding = 'none'
         return dataset_embedding
