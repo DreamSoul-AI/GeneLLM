@@ -110,7 +110,7 @@ def make_embeddings():
         if os.path.exists(os.path.join(cache_dir, model_name, key)):
             local_files_only[key] = True
     tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=cache_tokenizer_path,
-                                              local_files_only=local_files_only['tokenizer'])
+                                              local_files_only=local_files_only['tokenizer'])  # local_files_only, if True, will only load from local files
     model = AutoModel.from_pretrained(model_name, cache_dir=cache_model_path,
                                       local_files_only=local_files_only['model'])
     if torch.cuda.is_available():
