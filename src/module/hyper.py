@@ -15,7 +15,7 @@ def process_control():
     # batch_size = {'EMP': 8, 'mouse': 8, 'promcore': 8, 'prom300': 8, 'splice': 8, 'tf': 8, 'virus': 32}
     batch_size = {'EMP': 32, 'mouse': 32, 'promcore': 32, 'prom300': 32, 'splice': 32, 'tf': 32, 'virus': 128}
     if cfg['task_name'] == 'all':
-        cfg['num_epochs'] = max(list(batch_size.values()))
+        cfg['batch_size'] = max(list(batch_size.values()))
     else:
         cfg['batch_size'] = batch_size[cfg['task_name']]
     cfg['step_period'] = 1

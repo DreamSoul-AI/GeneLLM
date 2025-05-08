@@ -4,6 +4,34 @@ from module import filter_args
 from .loss import make_loss
 
 
+class DataEmbedding(nn.Module):
+    def __init__(self, embedding_mode, task_name, task_names, num_datasets, hidden_size):
+        super().__init__()
+        self.embedding_mode = embedding_mode
+        self.task_name = task_name
+        self.task_names = task_names
+        self.hidden_size = hidden_size
+        self.num_datasets = num_datasets
+
+        if self.embedding_mode == 'index':
+            self.dataset_embedding = nn.Embedding(num_datasets, hidden_size)
+        elif self.embedding_mode == 'word' and self.task_name == 'all':
+            print(self.task_names, hidden_size)
+            exit()
+            self.task_embedding = nn.Embedding(len(self.task_names), hidden_size)
+        else:
+            self.dataset_embedding = None
+
+    def forward(self, dataset_idx, task_idx=None):
+        if self.embedding_mode == 'index':
+            data_embedding = self.dataset_embedding(dataset_idx)
+        elif self.embedding_mode == 'word' and self.task_name == 'all':
+            data_embedding = self.task_embedding(task_idx)
+        else:
+            data_embedding = 0
+        return data_embedding
+
+
 class Base(nn.Module):
     def __init__(self, model, hidden_size, target_size, num_datasets, num_targets, task_names, subset_names, task_name,
                  subset_name, freeze, embedding_mode):
@@ -21,7 +49,8 @@ class Base(nn.Module):
         if self.freeze:
             self.freeze(self.model)
         self.embedding_mode = embedding_mode
-        self.dataset_embedding = self.make_dataset_embedding()
+        self.dataset_embedding = DataEmbedding(self.embedding_mode, self.task_name, self.task_names, self.num_datasets,
+                                               self.hidden_size)
 
         if num_targets == 1:
             self.output_proj = nn.Linear(hidden_size, target_size)
@@ -38,14 +67,18 @@ class Base(nn.Module):
             param.requires_grad = False
         return
 
-    def make_dataset_embedding(self):
-        if self.embedding_mode == 'index':
-            dataset_embedding = nn.Embedding(self.num_datasets, self.hidden_size)
-        if self.embedding_mode == 'word':
-            dataset_embedding = nn.Embedding(self.num_datasets, self.hidden_size)
-        else:
-            dataset_embedding = 'none'
-        return dataset_embedding
+    # def make_dataset_embedding(self):
+    #     if self.embedding_mode == 'index':
+    #         dataset_embedding = nn.Embedding(self.num_datasets, self.hidden_size)
+    #     elif self.embedding_mode == 'word' and self.task_name == 'all':
+    #         # dataset_embedding = nn.Embedding(self.num_datasets, self.hidden_size)
+    #         print(self.num_datasets, self.task_names, self.subset_names)
+    #         print(self.task_name, self.subset_name)
+    #         exit()
+    #         dataset_embedding = 1
+    #     else:
+    #         dataset_embedding = 'none'
+    #     return dataset_embedding
 
     def forward(self, **input):
         output = {}
@@ -60,7 +93,9 @@ class Base(nn.Module):
         decoder_input = pooled_output
 
         if self.embedding_mode != 'none':
-            decoder_input += self.dataset_embedding(input['dataset_idx'])
+            print(input['dataset_idx'], input['task_idx'])
+            decoder_input += self.dataset_embedding(input['dataset_idx'], input['task_idx'])
+            exit()
 
         if self.num_targets == 1:
             output['pred'] = self.output_proj(decoder_input)

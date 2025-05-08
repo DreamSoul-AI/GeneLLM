@@ -2,8 +2,8 @@
 # control
 control:
   data_name: GUE
-  task_name: EMP
-  subset_name: H3
+  task_name: all
+  subset_name: all
   model_name: dnabert2
   freeze: 0
   embedding_mode: word
