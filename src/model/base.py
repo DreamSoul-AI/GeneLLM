@@ -1,6 +1,7 @@
+import os
 import torch
 import torch.nn as nn
-from module import filter_args
+from module import filter_args, load
 from .loss import make_loss
 
 
@@ -16,9 +17,16 @@ class DataEmbedding(nn.Module):
         if self.embedding_mode == 'index':
             self.dataset_embedding = nn.Embedding(num_datasets, hidden_size)
         elif self.embedding_mode == 'word' and self.task_name == 'all':
-            print(self.task_names, hidden_size)
-            exit()
-            self.task_embedding = nn.Embedding(len(self.task_names), hidden_size)
+            embedding = []
+            for task_name in self.task_names:
+                embedding_i = load(os.path.join('data', 'GUE', 'description_embedding', task_name))['pooler_output']
+                embedding.append(embedding_i)
+            embedding = torch.cat(embedding, dim=0)
+            word_embedding_size = embedding.size(-1)
+            task_embedding = nn.Embedding(len(self.task_names), word_embedding_size)
+            task_embedding.weight.data.copy_(embedding.data)
+            task_embedding.weight.requires_grad = False
+            self.task_embedding = nn.Sequential(task_embedding, nn.Linear(word_embedding_size, hidden_size))
         else:
             self.dataset_embedding = None
 
@@ -27,6 +35,9 @@ class DataEmbedding(nn.Module):
             data_embedding = self.dataset_embedding(dataset_idx)
         elif self.embedding_mode == 'word' and self.task_name == 'all':
             data_embedding = self.task_embedding(task_idx)
+            # data_embedding = self.linear_proj(task_embedding)
+            # print(task_embedding.size())
+            # exit()
         else:
             data_embedding = 0
         return data_embedding
@@ -51,7 +62,6 @@ class Base(nn.Module):
         self.embedding_mode = embedding_mode
         self.dataset_embedding = DataEmbedding(self.embedding_mode, self.task_name, self.task_names, self.num_datasets,
                                                self.hidden_size)
-
         if num_targets == 1:
             self.output_proj = nn.Linear(hidden_size, target_size)
         else:
@@ -67,19 +77,6 @@ class Base(nn.Module):
             param.requires_grad = False
         return
 
-    # def make_dataset_embedding(self):
-    #     if self.embedding_mode == 'index':
-    #         dataset_embedding = nn.Embedding(self.num_datasets, self.hidden_size)
-    #     elif self.embedding_mode == 'word' and self.task_name == 'all':
-    #         # dataset_embedding = nn.Embedding(self.num_datasets, self.hidden_size)
-    #         print(self.num_datasets, self.task_names, self.subset_names)
-    #         print(self.task_name, self.subset_name)
-    #         exit()
-    #         dataset_embedding = 1
-    #     else:
-    #         dataset_embedding = 'none'
-    #     return dataset_embedding
-
     def forward(self, **input):
         output = {}
         # https://github.com/mosaicml/examples/blob/main/examples/benchmarks/bert/src/bert_layers.py
@@ -93,9 +90,8 @@ class Base(nn.Module):
         decoder_input = pooled_output
 
         if self.embedding_mode != 'none':
-            print(input['dataset_idx'], input['task_idx'])
-            decoder_input += self.dataset_embedding(input['dataset_idx'], input['task_idx'])
-            exit()
+            dataset_embedding = self.dataset_embedding(input['dataset_idx'], input['task_idx'])
+            decoder_input = decoder_input + dataset_embedding
 
         if self.num_targets == 1:
             output['pred'] = self.output_proj(decoder_input)
@@ -110,7 +106,7 @@ class Base(nn.Module):
                 mask_i = input['task_idx'] == task_idx
                 output_i = self.output_proj[task_idx](decoder_input[mask_i])
                 target_i = input['target'][mask_i]
-                output['pred'][task_idx] = target_i
+                output['pred'][task_idx] = output_i
                 loss_i = self.loss(output_i, target_i, reduction='sum')
                 loss += loss_i
             output['loss'] = loss / len(encoder_outputs)

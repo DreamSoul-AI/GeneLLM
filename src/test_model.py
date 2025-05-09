@@ -54,7 +54,7 @@ def runExperiment():
             tag_i = '{}_{}_{}'.format(cfg['tag'], task_name, subset_name)
             cfg['result_path'] = os.path.join('output', 'result', tag_i)
             cfg['logger_path'] = os.path.join('output', 'logger', 'test', 'runs', tag_i)
-            dataset_i = {'test': dataset['test'][i]}
+            dataset_i = {'valid': dataset['valid'][i], 'test': dataset['test'][i]}
             data_loader = make_data_loader(dataset_i, cfg[cfg['tag']]['optimizer']['batch_size'])
             test_logger = make_logger(cfg['logger_path'], split=['train', 'valid', 'test'], data_name=cfg['data_name'],
                                       task_name=cfg['task_name'], run_mode='test')
@@ -96,7 +96,7 @@ def test(subset, data_loader, model, logger, task_name, subset_name, task_idx):
         evaluation = logger.evaluate(subset, 'full')
         logger.append(evaluation, subset, input_size)
         info = {'info': ['Model: {}({}, {})'.format(cfg['tag'], task_name, subset_name),
-                         'Test Epoch (): {}({:.0f}%)'.format(subset, cfg['step'] // cfg['eval_period'], 100.)]}
+                         'Test Epoch ({}): {}({:.0f}%)'.format(subset, cfg['step'] // cfg['eval_period'], 100.)]}
         logger.append(info, subset)
         print(logger.write(subset))
         logger.save(True)

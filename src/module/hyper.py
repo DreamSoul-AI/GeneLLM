@@ -13,22 +13,17 @@ def process_control():
 
     # virus may be 8
     # batch_size = {'EMP': 8, 'mouse': 8, 'promcore': 8, 'prom300': 8, 'splice': 8, 'tf': 8, 'virus': 32}
-    batch_size = {'EMP': 32, 'mouse': 32, 'promcore': 32, 'prom300': 32, 'splice': 32, 'tf': 32, 'virus': 128}
-    if cfg['task_name'] == 'all':
-        cfg['batch_size'] = max(list(batch_size.values()))
-    else:
-        cfg['batch_size'] = batch_size[cfg['task_name']]
+    batch_size = {'EMP': 32, 'mouse': 32, 'promcore': 32, 'prom300': 32, 'splice': 32, 'tf': 32, 'virus': 128,
+                  'all': 32}
+    cfg['batch_size'] = batch_size[cfg['task_name']]
     cfg['step_period'] = 1
     cfg['num_steps'] = 30
     cfg['eval_period'] = 30
     cfg['eval'] = {}
     cfg['eval']['num_steps'] = 30
     # promcore/300 all, notata = 4
-    num_epochs = {'EMP': 3, 'mouse': 5, 'promcore': 10, 'prom300': 10, 'splice': 5, 'tf': 3, 'virus': 8}
-    if cfg['task_name'] == 'all':
-        cfg['num_epochs'] = max(list(num_epochs.values()))
-    else:
-        cfg['num_epochs'] = num_epochs[cfg['task_name']]
+    num_epochs = {'EMP': 3, 'mouse': 5, 'promcore': 10, 'prom300': 10, 'splice': 5, 'tf': 3, 'virus': 8, 'all': 10}
+    cfg['num_epochs'] = num_epochs[cfg['task_name']]
     cfg['num_epochs'] = None  # for test
 
     cfg['collate_mode'] = 'dict'
