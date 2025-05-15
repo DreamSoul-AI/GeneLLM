@@ -78,7 +78,10 @@ def main():
     elif mode == 'embedding':
         model_name = ['dnabert2']
         freeze = ['0']
-        embedding_mode = ['index', 'word']
+        if task_name[0] == 'all':
+            embedding_mode = ['index', 'word']
+        else:
+            embedding_mode = ['index']
         control_name = [[data_name, task_name, subset_name, model_name, freeze, embedding_mode]]
     else:
         raise ValueError('Not valid mode')
