@@ -6,7 +6,7 @@ control:
   subset_name: all
   model_name: dnabert2
   freeze: 0
-  embedding_mode: word
+  embedding_mode: word  # index
 # experiment
 pin_memory: True
 num_workers: 0
