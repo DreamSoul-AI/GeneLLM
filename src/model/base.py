@@ -35,15 +35,12 @@ class DataEmbedding(nn.Module):
             data_embedding = self.dataset_embedding(dataset_idx)
         elif self.embedding_mode == 'word' and self.task_name == 'all':
             data_embedding = self.task_embedding(task_idx)
-            # data_embedding = self.linear_proj(task_embedding)
-            # print(task_embedding.size())
-            # exit()
         else:
             data_embedding = 0
         return data_embedding
 
 
-class Base(nn.Module):
+class BertBase(nn.Module):
     def __init__(self, model, hidden_size, target_size, num_datasets, num_targets, task_names, subset_names, task_name,
                  subset_name, freeze, embedding_mode):
         super().__init__()
@@ -126,6 +123,11 @@ def base(model, cfg):
     subset_name = cfg['subset_name']
     freeze = cfg['freeze']
     embedding_mode = cfg['embedding_mode']
-    model = Base(model, hidden_size, target_size, num_datasets, num_targets, task_names, subset_names, task_name,
-                 subset_name, freeze, embedding_mode)
+    if cfg['model_name'] in ['dnabert2']:
+        model = BertBase(model, hidden_size, target_size, num_datasets, num_targets, task_names, subset_names,
+                         task_name,
+                         subset_name, freeze, embedding_mode)
+    else:
+        model = LanguageModelBase(model, hidden_size, target_size, num_datasets, num_targets, task_names, subset_names,
+                                  task_name, subset_name, freeze, embedding_mode)
     return model

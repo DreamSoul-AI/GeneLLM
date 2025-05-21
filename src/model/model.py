@@ -7,7 +7,13 @@ from transformers import get_linear_schedule_with_warmup
 
 
 def make_core(cfg):
-    core, tokenizer = eval('model.{}(cfg)'.format(cfg['model_name']))
+    if cfg['model_name'] in ['dnabert2']:
+        core, tokenizer = eval('model.{}(cfg)'.format(cfg['model_name']))
+    else:
+        core, tokenizer = model.make_model_generate(cfg)
+        encoder, encoder_tokenizer = model.dnabert2(cfg)
+        core.encoder = encoder
+        core.encoder_tokenizer = encoder_tokenizer
     return core, tokenizer
 
 

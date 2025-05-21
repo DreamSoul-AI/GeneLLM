@@ -52,6 +52,9 @@ def process_control():
     cfg['dataset_indices'] = dataset_indices
 
     cfg['model'] = {}
+    cfg['model']['model_source'] = 'transformer'
+    cfg['model']['hub_model_identifier'] = ['Qwen']
+
     cfg['model']['model_name'] = cfg['model_name']
     cfg['model']['task_names'] = cfg['task_names']
     cfg['model']['subset_names'] = cfg['subset_names']
