@@ -14,6 +14,7 @@ def extract_metrics(result_path):
     """
     result = load(result_path)
     metrics = {
+        'tag': result['cfg']['tag'],
         "task_name": result['cfg']['control']['task_name'],
         "subset_name": result['cfg']['control']['subset_name'],
         "valid_acc": result['logger']['test']['mean']['valid/Accuracy'],
