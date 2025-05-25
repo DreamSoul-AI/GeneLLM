@@ -51,7 +51,7 @@ def process_control():
     # 用 dataset indices 来表示数据集的索引，其实就是给每一个 dataset 一个二维的 id (task_index, subset_index),
     #   然后再把这个二维的 integer id 给 map 成一个一维的 integer id
     # task_index：跟上面 cfg['subset_task_namesnames'] 定义的顺序是一样的，i.e.['EMP', 'mouse', 'promcore', 'prom300', 'splice', 'tf', 'virus'] -> [0, 1, 2, 3, 4, 5, 6]
-    # subset_index: 以此类推，跟上面 cfg['subset_names'] 定义的顺序是一样的，e.g. 对于 mouse: ['Ch12Nrf2Iggrab', 'Ch12Znf384hpa004051Iggrab', 'MelJundIggrab', 'MelMafkDm2p5dStd', 'MelNelfeIggrab'] -> [0, 1, 2, 3, 4]
+    # subset_index: 以此类推，跟上面 cfg['subset_names'] 定义的顺序是一样的
     dataset_indices = {}
     index = 0
     for task_name in cfg['subset_names']:
