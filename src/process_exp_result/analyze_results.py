@@ -1,6 +1,10 @@
 # run this file at /src: python python_test/my_test.py
 import sys
 import os
+import pandas as pd
+import re
+import argparse
+
 # add src to sys.path, so that we can import modules from it
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))) # os.path.dirname(__file__) is the directory of this file, i.e. /src/process_exp_result
 from module import load
@@ -33,18 +37,38 @@ def get_exp_results(result_dir):
     :return: A list of tuples containing the metrics for each experiment.
     """
     exp_results = []
+    pattern = r'^\d+_.+' # <number>_<...> file name pattern for exp results
     for filename in os.listdir(result_dir):
-        result_path = os.path.join(result_dir, filename)
-        metrics = extract_metrics(result_path)
-        exp_results.append(metrics)
+        if re.match(pattern, filename):
+            result_path = os.path.join(result_dir, filename)
+            metrics = extract_metrics(result_path)
+            exp_results.append(metrics)
     return exp_results
 
 
+if __name__ == '__main__':
+    # Example usage: python process_exp_result/analyze_results.py --result_dir ./output/result_test
 
-# path is relative to the current working directory, which is /src
-# this means . means /src
-result_dir = os.path.join('.', 'output', 'result')  # relative to src/process_exp_result
-exp_results = get_exp_results(result_dir)
+    parser = argparse.ArgumentParser(description="Extract experiment results and export to Excel.")
+    parser.add_argument(
+        "--result_dir",
+        type=str,
+        # path is relative to the current working directory, which is /src
+        # this means . means /src
+        default=os.path.join('.', 'output', 'result'),  # default value
+        help="Path to the result directory (suppose you are at the current working directory, i.e., /src)"
+    )
+    args = parser.parse_args()
+    
+    result_dir = args.result_dir
+    exp_results = get_exp_results(result_dir)
 
-print("Done")
+    # print(exp_results)
+
+    # save as excel
+    excel_path = os.path.join(result_dir, 'exp_results.xlsx')
+    df = pd.DataFrame(exp_results)
+    df.to_excel(excel_path, index=False)
+
+    print(f"Results saved to: {excel_path}")
 

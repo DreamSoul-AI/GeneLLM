@@ -87,7 +87,8 @@ def main():
         raise ValueError('Not valid mode')
     controls = make_controls(script_name, init_seeds, num_experiments, resume_mode, control_name)
 
-    s = '#!/bin/bash\n'
+    # the following is for generating the bash script for each experiment
+    s = '#!/bin/bash\n'  # this s is the bash script
     j = 1
     k = 1
     for i in range(len(controls)):
