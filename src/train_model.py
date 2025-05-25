@@ -87,7 +87,7 @@ def train(data_loader, model, optimizer, scheduler, logger):
     start_time = time.time()
     with logger.profiler:
         for i, input in data_loader:
-            print(i)
+            # print(i)
             if i % cfg['step_period'] == 0 and cfg['profile']:
                 logger.profiler.step()
             input_size = len(input[list(input.keys())[0]])

@@ -4,6 +4,10 @@ from config import cfg
 
 
 def process_control():
+    """
+    把 cfg 这个实验配置参数改得更容易实用；
+    然后再加入训练时候需要用的 hyper parameters
+    """
     cfg['data_name'] = cfg['control']['data_name']
     cfg['task_name'] = cfg['control']['task_name']
     cfg['subset_name'] = str(cfg['control']['subset_name'])
@@ -24,7 +28,7 @@ def process_control():
     # promcore/300 all, notata = 4
     num_epochs = {'EMP': 3, 'mouse': 5, 'promcore': 10, 'prom300': 10, 'splice': 5, 'tf': 3, 'virus': 8, 'all': 10}
     cfg['num_epochs'] = num_epochs[cfg['task_name']]
-    cfg['num_epochs'] = None  # for test
+    # cfg['num_epochs'] = None  # for test
 
     cfg['collate_mode'] = 'dict'
 
@@ -40,6 +44,11 @@ def process_control():
         'tf': ['wgEncodeEH000552', 'wgEncodeEH000606', 'wgEncodeEH001546', 'wgEncodeEH001776', 'wgEncodeEH002829'],
         'virus': ['covid'],
     }
+
+    # 用 dataset indices 来表示数据集的索引，其实就是给每一个 dataset 一个二维的 id (task_index, subset_index),
+    #   然后再把这个二维的 integer id 给 map 成一个一维的 integer id
+    # task_index：跟上面 cfg['subset_task_namesnames'] 定义的顺序是一样的，i.e.['EMP', 'mouse', 'promcore', 'prom300', 'splice', 'tf', 'virus'] -> [0, 1, 2, 3, 4, 5, 6]
+    # subset_index: 以此类推，跟上面 cfg['subset_names'] 定义的顺序是一样的
     dataset_indices = {}
     index = 0
     for task_name in cfg['subset_names']:
