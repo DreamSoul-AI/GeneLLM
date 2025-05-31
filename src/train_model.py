@@ -17,7 +17,7 @@ for k in cfg: # copy config paras to parser.
     exec('parser.add_argument(\'--{0}\', default=cfg[\'{0}\'], type=type(cfg[\'{0}\']))'.format(k))
 parser.add_argument('--control_name', default=None, type=str) 
 args = vars(parser.parse_args()) # parser.parse_args() parses the args, vars() returns a python dict.
-process_args(args) # update cfg with args from command line
+process_args(args) 
 
 
 def main():
