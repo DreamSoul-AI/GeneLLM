@@ -12,10 +12,11 @@ from config import cfg
 def make_dataset(data_name, verbose=True, **kwargs):
     if verbose:
         print('fetching data {}...'.format(data_name))
-    root = os.path.join('data', data_name)
+    root = os.path.join('data', data_name)    # 根据 data_name 获取数据的根目录
     if data_name in ['GUE']:
         task_name = kwargs['task_name']
         subset_name = kwargs['subset_name']
+        # 根据 task_name 来准备不同的数据集
         if task_name == 'all':
             task_names = list(cfg['subset_names'].keys())
             dataset_ = {'train': [], 'valid': [], 'test': []}
@@ -155,7 +156,7 @@ def process_dataset(dataset, tokenizer=None, merge_test=True):
     def dataset_index_transform(input):
         if cfg['task_name'] == 'all':
             input['dataset_idx'] = torch.tensor(cfg['dataset_indices'][(input['task_idx'].item(),
-                                                                        input['subset_idx'].item())])
+                                                                        input['subset_idx'].item())]) # 给每一个 (task, subtask) e.g. (EMP, xxx) 一个数字 id。
         else:
             if cfg['subset_name'] == 'all':
                 input['dataset_idx'] = input['subset_idx']
