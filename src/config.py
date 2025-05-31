@@ -9,12 +9,15 @@ delimiters = ['_', '-', '~', ';', '#']
 
 
 def process_args(args):
+    """update cfg with args from command line."""
     for k in cfg:
         cfg[k] = args[k]
     if 'control_name' in args and args['control_name'] is not None:
+        # making new control cfg['control'] according to the control_name. 
+        #   control_name is from command line.
         cfg['control'] = make_control(cfg['control'], args['control_name'])
     if cfg['control'] is not None:
-        cfg['control_name'] = make_control_name(cfg['control'])
+        cfg['control_name'] = make_control_name(cfg['control']) 
     return
 
 
