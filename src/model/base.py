@@ -113,6 +113,9 @@ class BertBase(nn.Module):
 
 
 def base(model, cfg):
+    """
+    Create a base model (a computation graph) based on the configuration.
+    """
     hidden_size = cfg[cfg['model_name']]['hidden_size']
     target_size = cfg['target_size']
     num_datasets = cfg['num_datasets']
@@ -126,8 +129,8 @@ def base(model, cfg):
     if cfg['model_name'] in ['dnabert2']:
         model = BertBase(model, hidden_size, target_size, num_datasets, num_targets, task_names, subset_names,
                          task_name,
-                         subset_name, freeze, embedding_mode)
+                         subset_name, freeze, embedding_mode)  # 定义 BertBase 这个 model,i.e. a computation graph
     else:
         model = LanguageModelBase(model, hidden_size, target_size, num_datasets, num_targets, task_names, subset_names,
                                   task_name, subset_name, freeze, embedding_mode)
-    return model
+    return model 
