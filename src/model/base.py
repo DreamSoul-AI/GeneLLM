@@ -115,7 +115,7 @@ class BertBase(nn.Module):
 
 def base(model, cfg):
     """
-    Create a base model (a computation graph) based on the configuration. 这里就是在 core model 的基础上，根据 cfg 的值来决定是否需要添加其他的模块，比如分类头，或者其他的任务相关的模块。
+    Create a base model (a computation graph) based on the configuration.
     """
     hidden_size = cfg[cfg['model_name']]['hidden_size']
     target_size = cfg['target_size']
