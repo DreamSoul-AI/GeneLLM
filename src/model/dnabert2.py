@@ -14,7 +14,7 @@ def dnabert2(cfg):
     cache_model_path = os.path.join(cache_dir, cfg['model_name'], 'model')
     local_files_only = {'config': False, 'tokenizer': False, 'model': False}
     for key in local_files_only:
-        if os.path.exists(os.path.join(cache_dir, cfg['model_name'], key)):
+        if os.path.exists(os.path.join(cache_dir, cfg['model_name'], key)): # if already downloaded,use local files only for tokenizer, config and model
             local_files_only[key] = True
     tokenizer = AutoTokenizer.from_pretrained(model_name_or_path, trust_remote_code=True,
                                               cache_dir=cache_tokenizer_path,

@@ -15,7 +15,7 @@ class DataEmbedding(nn.Module):
         self.num_datasets = num_datasets
 
         if self.embedding_mode == 'index':
-            self.dataset_embedding = nn.Embedding(num_datasets, hidden_size)
+            self.dataset_embedding = nn.Embedding(num_datasets, hidden_size) # 给每一个 sebsets 加一个 index embedding。 e.g.EMP_all_index, EMP 里面有10个 subsets, 为每一个 subset 分配一个 embedding vector(size 也是768)
         elif self.embedding_mode == 'word' and self.task_name == 'all':
             embedding = []
             for task_name in self.task_names:
@@ -42,7 +42,7 @@ class DataEmbedding(nn.Module):
 
 class BertBase(nn.Module):
     def __init__(self, model, hidden_size, target_size, num_datasets, num_targets, task_names, subset_names, task_name,
-                 subset_name, freeze, embedding_mode):
+                 subset_name, freeze, embedding_mode):# 这里的 model 就是 core model, 就是 DNABert2 用的那个 BERT。
         super().__init__()
         self.model = model
         self.hidden_size = hidden_size
@@ -59,7 +59,7 @@ class BertBase(nn.Module):
         self.embedding_mode = embedding_mode
         self.dataset_embedding = DataEmbedding(self.embedding_mode, self.task_name, self.task_names, self.num_datasets,
                                                self.hidden_size)
-        if num_targets == 1:
+        if num_targets == 1: # 这个就是分类头的数量
             self.output_proj = nn.Linear(hidden_size, target_size)
         else:
             output_proj = []
@@ -67,7 +67,7 @@ class BertBase(nn.Module):
                 target_size_i = target_size[task_names[i]]
                 output_proj.append(nn.Linear(hidden_size, target_size_i))
             self.output_proj = nn.ModuleList(output_proj)
-        self.loss = make_loss
+        self.loss = make_loss  # 定义 loss 的计算图。
 
     def freeze(self, model):
         for param in model.parameters():
@@ -77,7 +77,7 @@ class BertBase(nn.Module):
     def forward(self, **input):
         output = {}
         # https://github.com/mosaicml/examples/blob/main/examples/benchmarks/bert/src/bert_layers.py
-        valid_input = filter_args(self.model.forward, input)
+        valid_input = filter_args(self.model.forward, input) # 用 filter_args 函数筛选 input 字典，只保留 self.model.forward 方法所需要的参数。
         if self.freeze:
             with torch.no_grad():
                 encoder_outputs, pooled_output = self.model(**valid_input)
@@ -88,7 +88,7 @@ class BertBase(nn.Module):
 
         if self.embedding_mode != 'none':
             dataset_embedding = self.dataset_embedding(input['dataset_idx'], input['task_idx'])
-            decoder_input = decoder_input + dataset_embedding
+            decoder_input = decoder_input + dataset_embedding # 这里的 + 是 element-wise add
 
         if self.num_targets == 1:
             output['pred'] = self.output_proj(decoder_input)
@@ -114,7 +114,7 @@ class BertBase(nn.Module):
 
 def base(model, cfg):
     """
-    Create a base model (a computation graph) based on the configuration.
+    Create a base model (a computation graph) based on the configuration. 这里就是在 core model 的基础上，根据 cfg 的值来决定是否需要添加其他的模块，比如分类头，或者其他的任务相关的模块。
     """
     hidden_size = cfg[cfg['model_name']]['hidden_size']
     target_size = cfg['target_size']

@@ -42,11 +42,11 @@ def runExperiment():
     cfg['best_path'] = os.path.join(cfg['tag_path'], 'best')
     cfg['logger_path'] = os.path.join('output', 'logger', 'train', 'runs', cfg['tag'])
     dataset = make_dataset(cfg['data_name'], task_name=cfg['task_name'], subset_name=cfg['subset_name'])
-    core, tokenizer = make_core(cfg['model'])
-    dataset = process_dataset(dataset, tokenizer)
-    model = make_model(core, tokenizer, cfg['model'])
+    core, tokenizer = make_core(cfg['model'])  # 这里会根据 cfg['model'] 的值来选择不同的模型 core 和 tokenizer。
+    dataset = process_dataset(dataset, tokenizer) #用 tokenizer 对原始数据集进行进一步处理或预处理。进一步 update cfg
+    model = make_model(core, tokenizer, cfg['model']) # 在 core model 的基础上，构建一个具体的模型实例。
     result = resume(cfg['checkpoint_path'], resume_mode=cfg['resume_mode'])
-    if result is None:
+    if result is None: # train from scratch
         cfg['step'] = 0
         model = model.to(cfg['device'])
         optimizer = make_optimizer(model.parameters(), cfg[cfg['tag']]['optimizer'])
