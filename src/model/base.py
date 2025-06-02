@@ -16,7 +16,6 @@ class DataEmbedding(nn.Module):
 
         if self.embedding_mode == 'index':
             self.dataset_embedding = nn.Embedding(num_datasets, hidden_size) # 给每一个 sebsets 加一个 index embedding。 e.g.EMP_all_index, EMP 里面有10个 subsets, 为每一个 subset 分配一个 embedding vector(size 也是768)
-            nn.init.normal_(self.dataset_embedding.weight, mean=0.0, std=1e-4) # init embedding vector
         elif self.embedding_mode == 'word' and self.task_name == 'all':
             embedding = []
             for task_name in self.task_names:
@@ -115,7 +114,7 @@ class BertBase(nn.Module):
 
 def base(model, cfg):
     """
-    Create a base model (a computation graph) based on the configuration.
+    Create a base model (a computation graph) based on the configuration. 这里就是在 core model 的基础上，根据 cfg 的值来决定是否需要添加其他的模块，比如分类头，或者其他的任务相关的模块。
     """
     hidden_size = cfg[cfg['model_name']]['hidden_size']
     target_size = cfg['target_size']
