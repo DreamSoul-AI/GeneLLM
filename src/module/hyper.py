@@ -26,6 +26,7 @@ def process_control():
     cfg['eval'] = {}
     cfg['eval']['num_steps'] = 30
     # promcore/300 all, notata = 4
+    # num_epochs = {'EMP': 3, 'mouse': 5, 'promcore': 10, 'prom300': 10, 'splice': 5, 'tf': 3, 'virus': 8, 'all': 10} # original epochs
     num_epochs = {'EMP': 3, 'mouse': 5, 'promcore': 10, 'prom300': 10, 'splice': 5, 'tf': 3, 'virus': 8, 'all': 10}
     cfg['num_epochs'] = num_epochs[cfg['task_name']]
     # cfg['num_epochs'] = None  # for test
