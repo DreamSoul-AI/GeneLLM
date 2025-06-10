@@ -10,18 +10,19 @@ from module import save, resume, to_device, process_control
 
 cudnn.benchmark = True
 parser = argparse.ArgumentParser(description='cfg')
+# load initial cfg paras in config.yml into parser
 for k in cfg:
     exec('parser.add_argument(\'--{0}\', default=cfg[\'{0}\'], type=type(cfg[\'{0}\']))'.format(k))
 parser.add_argument('--control_name', default=None, type=str)
-args = vars(parser.parse_args())
-process_args(args)
-
+args = vars(parser.parse_args()) # convert parser to dict
+process_args(args) # update cfg according to the args from the command line
+# 最后的这个 args 就包含了实验所有的配置参数。所以，最后的这个配置参数就是你用 command line 传入的参数
 
 def main():
     seeds = list(range(cfg['init_seed'], cfg['init_seed'] + cfg['num_experiments']))
     for i in range(cfg['num_experiments']):
         tag_list = [str(seeds[i]), cfg['control_name']]
-        cfg['tag'] = '_'.join([x for x in tag_list if x])
+        cfg['tag'] = '_'.join([x for x in tag_list if x]) # cfg['tag'] = '0_GUE_EMP_H3_dnabert2_0_none_EMP_H3' 存的是这个实验的名字
         process_control()
         print('Experiment: {}'.format(cfg['tag']))
         runExperiment()
@@ -67,7 +68,7 @@ def runExperiment():
         task_name = dataset['test'].task_name
         subset_name = dataset['test'].subset_name
         task_idx = dataset['test'].task_idx
-        tag = '{}_{}_{}'.format(cfg['tag'], task_name, subset_name)
+        tag = '{}_{}_{}'.format(cfg['tag'], task_name, subset_name) # cfg['tag'] 中已经含有 task_name 和 subset_name 了，还有必要再 join 一下吗？
         cfg['result_path'] = os.path.join('output', 'result', tag)
         cfg['logger_path'] = os.path.join('output', 'logger', 'test', 'runs', tag)
 
