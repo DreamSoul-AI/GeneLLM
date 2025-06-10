@@ -113,7 +113,7 @@ class BertBase(nn.Module):
 
 
 def base(model, cfg):
-    hidden_size = cfg[cfg['model_name']]['hidden_size']
+    hidden_size = cfg['dnabert2']['hidden_size']
     target_size = cfg['target_size']
     num_datasets = cfg['num_datasets']
     num_targets = cfg['num_targets']

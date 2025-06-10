@@ -6,7 +6,10 @@ from config import cfg
 def process_control():
     cfg['data_name'] = cfg['control']['data_name']
     cfg['task_name'] = cfg['control']['task_name']
-    cfg['subset_name'] = str(cfg['control']['subset_name'])
+    if '~' in cfg['control']['subset_name']:
+        cfg['subset_name'] = cfg['control']['subset_name'].split('~')
+    else:
+        cfg['subset_name'] = str(cfg['control']['subset_name'])
     cfg['model_name'] = cfg['control']['model_name']
     cfg['freeze'] = int(cfg['control']['freeze'])
     cfg['embedding_mode'] = cfg['control']['embedding_mode']
@@ -74,6 +77,8 @@ def process_control():
     else:
         if cfg['subset_name'] == 'all':
             cfg['model']['num_datasets'] = len(cfg['subset_names'][cfg['task_name']])
+        elif isinstance(cfg['subset_name'], list):
+            cfg['model']['num_datasets'] = len(cfg['subset_name'])
         else:
             cfg['model']['num_datasets'] = 1
         cfg['model']['num_targets'] = 1

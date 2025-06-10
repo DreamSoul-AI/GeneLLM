@@ -129,6 +129,7 @@ def test(subset, data_loader, model, logger):
         model.train(False)
         num_steps = len(data_loader) if cfg['eval']['num_steps'] == -1 else cfg['eval']['num_steps']
         for i, input in enumerate(data_loader):
+            print(i)
             input_size = len(input[list(input.keys())[0]])
             input = to_device(input, cfg['device'])
             output = model(**input)

@@ -8,13 +8,13 @@ from transformers import AutoModel, AutoModelForSequenceClassification, AutoConf
 def dnabert2(cfg):
     model_name_or_path = 'zhihan1996/DNABERT-2-117M'
     cache_dir = os.path.join('output', 'cache')
-    cache_config_path = os.path.join(cache_dir, cfg['model_name'], 'config')
-    cache_tokenizer_path = os.path.join(cache_dir, cfg['model_name'], 'tokenizer')
+    cache_config_path = os.path.join(cache_dir, 'dnabert2', 'config')
+    cache_tokenizer_path = os.path.join(cache_dir, 'dnabert2', 'tokenizer')
     # https://huggingface.co/zhihan1996/DNABERT-2-117M/tree/main
-    cache_model_path = os.path.join(cache_dir, cfg['model_name'], 'model')
+    cache_model_path = os.path.join(cache_dir, 'dnabert2', 'model')
     local_files_only = {'config': False, 'tokenizer': False, 'model': False}
     for key in local_files_only:
-        if os.path.exists(os.path.join(cache_dir, cfg['model_name'], key)):
+        if os.path.exists(os.path.join(cache_dir, 'dnabert2', key)):
             local_files_only[key] = True
     tokenizer = AutoTokenizer.from_pretrained(model_name_or_path, trust_remote_code=True,
                                               cache_dir=cache_tokenizer_path,
