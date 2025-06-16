@@ -65,6 +65,7 @@ def runExperiment():
             # cfg['control']['subset_name_test'] is the name of the test subset, e.g. 'H3' for the EMP task.
             # cfg['control']['subset_name']: the name of the subset used for training, e.g. 'EMP_all'.
             cfg['control']['subset_name_test'] = subset_name  
+            cfg['control']['task_name_test'] = task_name
             result = {'cfg': cfg, 'logger': {'train': result['logger'], 'test': test_logger.state_dict()}}
             save(result, cfg['result_path'])
     else:
