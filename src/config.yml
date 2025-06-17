@@ -2,8 +2,8 @@
 # control
 control:
   data_name: GUE
-  task_name: EMP
-  subset_name: H3~H3K4me1
+  task_name: EMP~mouse
+  subset_name: H3~H3K4me1~Ch12Nrf2Iggrab
   model_name: dnabert2
 #  model_name: Qwen2.5-0.5B-Instruct
   freeze: 0

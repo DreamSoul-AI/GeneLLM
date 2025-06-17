@@ -9,7 +9,10 @@ def process_control():
     然后再加入训练时候需要用的 hyper parameters
     """
     cfg['data_name'] = cfg['control']['data_name']
-    cfg['task_name'] = cfg['control']['task_name']
+    if '~' in cfg['control']['task_name']:
+        cfg['task_name'] = cfg['control']['task_name'].split('~')
+    else:
+        cfg['task_name'] = str(cfg['control']['task_name'])
     if '~' in cfg['control']['subset_name']:
         cfg['subset_name'] = cfg['control']['subset_name'].split('~')
     else:
@@ -22,7 +25,10 @@ def process_control():
     # batch_size = {'EMP': 8, 'mouse': 8, 'promcore': 8, 'prom300': 8, 'splice': 8, 'tf': 8, 'virus': 32}
     batch_size = {'EMP': 32, 'mouse': 32, 'promcore': 32, 'prom300': 32, 'splice': 32, 'tf': 32, 'virus': 128,
                   'all': 32}
-    cfg['batch_size'] = batch_size[cfg['task_name']]
+    if isinstance(cfg['task_name'], list):
+        cfg['batch_size'] = max([batch_size[task_name] for task_name in cfg['task_name']])
+    else:
+        cfg['batch_size'] = batch_size[cfg['task_name']]
     cfg['step_period'] = 1
     cfg['num_steps'] = 30
     cfg['eval_period'] = 30
@@ -30,7 +36,10 @@ def process_control():
     cfg['eval']['num_steps'] = 30
     # promcore/300 all, notata = 4
     num_epochs = {'EMP': 3, 'mouse': 5, 'promcore': 10, 'prom300': 10, 'splice': 5, 'tf': 3, 'virus': 8, 'all': 10}
-    cfg['num_epochs'] = num_epochs[cfg['task_name']]
+    if isinstance(cfg['task_name'], list):
+        cfg['num_epochs'] = max([num_epochs[task_name] for task_name in cfg['task_name']])
+    else:
+        cfg['num_epochs'] = num_epochs[cfg['task_name']]
     # cfg['num_epochs'] = None  # for test
 
     cfg['collate_mode'] = 'dict'
@@ -80,9 +89,18 @@ def process_control():
     task_max_length = {'EMP': 128, 'mouse': 30, 'promcore': 20, 'prom300': 70, 'splice': 80, 'tf': 30, 'virus': 256}
     cfg['model']['task_max_length'] = task_max_length
     if cfg['task_name'] == 'all':
-        cfg['model']['max_length'] = max(list(cfg['model']['task_max_length'].values()))
         cfg['model']['num_datasets'] = sum(len(v) for v in cfg['subset_names'].values())
         cfg['model']['num_targets'] = len(cfg['task_names'])
+        cfg['model']['max_length'] = max(list(cfg['model']['task_max_length'].values()))
+    elif isinstance(cfg['task_name'], list):
+        if cfg['subset_name'] == 'all':
+            cfg['model']['num_datasets'] = sum([len(cfg['subset_names'][task_name]) for task_name in cfg['task_name']])
+        elif isinstance(cfg['subset_name'], list):
+            cfg['model']['num_datasets'] = len(cfg['subset_name'])
+        else:
+            raise ValueError('Not valid subset name')
+        cfg['model']['num_targets'] = len(cfg['task_name'])
+        cfg['model']['max_length'] = max([cfg['model']['task_max_length'][task_name] for task_name in cfg['task_name']])
     else:
         if cfg['subset_name'] == 'all':
             cfg['model']['num_datasets'] = len(cfg['subset_names'][cfg['task_name']])

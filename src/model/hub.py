@@ -5,13 +5,13 @@ import torch.nn as nn
 
 def make_model_generate(cfg):
     if cfg['model_source'] == 'transformer':
-        # huggingface-cli download --model Qwen/Qwen2.5-7B-Instruct --local_dir Qwen/Qwen2.5-7B-Instruct
+        from huggingface_hub import snapshot_download as hf_snapshot_download
         from transformers import (
             AutoModelForCausalLM,
             AutoTokenizer,
         )
     elif cfg['model_source'] == 'modelscope':
-        # modelscope download --model Qwen/Qwen2.5-7B-Instruct --local_dir Qwen/Qwen2.5-7B-Instruct
+        from modelscope.hub.snapshot_download import snapshot_download as ms_snapshot_download
         from modelscope import (
             AutoModelForCausalLM,
             AutoTokenizer,
@@ -24,19 +24,17 @@ def make_model_generate(cfg):
             model_name = '{}/{}'.format(identifier, cfg['model_name'])
             break
 
-    cache_dir = os.path.join('output', 'cache')
-    cache_tokenizer_path = os.path.join(cache_dir, cfg['model_name'], 'tokenizer')
-    cache_model_path = os.path.join(cache_dir, cfg['model_name'], 'model')
-    local_files_only = {'model_config': False, 'generation_config': False, 'tokenizer': False, 'model': False}
-    for key in local_files_only:
-        if os.path.exists(os.path.join(cache_dir, cfg['model_name'], key)):
-            local_files_only[key] = True
-    tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name_or_path=model_name,
-                                              cache_dir=cache_tokenizer_path,
-                                              local_files_only=local_files_only['tokenizer'])
-    tokenizer.pad_token = tokenizer.eos_token
+    cfg['snapshot_path'] = os.path.join('output', 'snapshot', identifier, cfg['model_name'])
+    snapshot_path = cfg['snapshot_path']
 
-    model = AutoModelForCausalLM.from_pretrained(pretrained_model_name_or_path=model_name,
-                                                 cache_dir=cache_model_path,
-                                                 local_files_only=local_files_only['model'])
+    if not os.path.exists(os.path.join(snapshot_path)):
+        if cfg['model_source'] == 'huggingface':
+            hf_snapshot_download(repo_id=model_name, local_files_only=False, local_dir=snapshot_path)
+        elif cfg['model_source'] == 'huggingface':
+            ms_snapshot_download(repo_id=model_name, local_files_only=False, local_dir=snapshot_path)
+        else:
+            raise ValueError('Not valid model source')
+    tokenizer = AutoTokenizer.from_pretrained(snapshot_path)
+    tokenizer.pad_token = tokenizer.eos_token
+    model = AutoModelForCausalLM.from_pretrained(pretrained_model_name_or_path=snapshot_path)
     return model, tokenizer

@@ -14,12 +14,12 @@ def make_metric(split, **kwargs):
         if run_mode == 'train':
             for k in metric_name:
                 if k == 'train':
-                    if task_name == 'all':
+                    if task_name == 'all' or isinstance(task_name, list):
                         metric_name[k].extend(['Loss'])
                     else:
                         metric_name[k].extend(['Loss', 'Accuracy'])
                 else:
-                    if task_name == 'all':
+                    if task_name == 'all' or isinstance(task_name, list):
                         metric_name[k].extend(['Loss'])
                     else:
                         metric_name[k].extend(['Loss', 'Accuracy', 'F1', 'MCC'])

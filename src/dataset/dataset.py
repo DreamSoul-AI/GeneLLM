@@ -31,9 +31,40 @@ def make_dataset(data_name, verbose=True, **kwargs):
                     dataset_['train'].append(dataset_train)
                     dataset_['valid'].append(dataset_valid)
                     dataset_['test'].append(dataset_test)
-        else:
+        elif isinstance(task_name, list):
+            dataset_ = {'train': [], 'valid': [], 'test': []}
             if subset_name == 'all':
-                dataset_ = {'train': [], 'valid': [], 'test': []}
+                for task_name_i in task_name:
+                    subset_names = cfg['subset_names'][task_name_i]
+                    for subset_name_i in subset_names:
+                        dataset_train = dataset.GUE(root=root, task_name=task_name_i, subset_name=subset_name_i,
+                                                    split='train')
+                        dataset_valid = dataset.GUE(root=root, task_name=task_name_i, subset_name=subset_name_i,
+                                                    split='valid')
+                        dataset_test = dataset.GUE(root=root, task_name=task_name_i, subset_name=subset_name_i,
+                                                   split='test')
+                        dataset_['train'].append(dataset_train)
+                        dataset_['valid'].append(dataset_valid)
+                        dataset_['test'].append(dataset_test)
+            elif isinstance(subset_name, list):
+                for task_name_i in task_name:
+                    subset_names = [subset_name_i for subset_name_i in cfg['subset_name'] if
+                                    subset_name_i in cfg['subset_names'][task_name_i]]
+                    for subset_name_i in subset_names:
+                        dataset_train = dataset.GUE(root=root, task_name=task_name_i, subset_name=subset_name_i,
+                                                    split='train')
+                        dataset_valid = dataset.GUE(root=root, task_name=task_name_i, subset_name=subset_name_i,
+                                                    split='valid')
+                        dataset_test = dataset.GUE(root=root, task_name=task_name_i, subset_name=subset_name_i,
+                                                   split='test')
+                        dataset_['train'].append(dataset_train)
+                        dataset_['valid'].append(dataset_valid)
+                        dataset_['test'].append(dataset_test)
+            else:
+                raise ValueError('Not valid subset name')
+        else:
+            dataset_ = {'train': [], 'valid': [], 'test': []}
+            if subset_name == 'all':
                 subset_names = cfg['subset_names'][task_name]
                 for subset_name_i in subset_names:
                     dataset_train = dataset.GUE(root=root, task_name=task_name, subset_name=subset_name_i,
@@ -46,7 +77,6 @@ def make_dataset(data_name, verbose=True, **kwargs):
                     dataset_['valid'].append(dataset_valid)
                     dataset_['test'].append(dataset_test)
             elif isinstance(subset_name, list):
-                dataset_ = {'train': [], 'valid': [], 'test': []}
                 subset_names = cfg['subset_name']
                 for subset_name_i in subset_names:
                     dataset_train = dataset.GUE(root=root, task_name=task_name, subset_name=subset_name_i,
@@ -164,7 +194,6 @@ def process_dataset(dataset, tokenizer=None, merge_test=True):
         return input
 
     processed_dataset = dataset
-
 
     if isinstance(processed_dataset['train'], list):
         if cfg['model']['num_targets'] == 1:
