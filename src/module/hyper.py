@@ -34,7 +34,7 @@ def process_control():
     cfg['eval_period'] = 30
     cfg['eval'] = {}
     cfg['eval']['num_steps'] = 30
-    # promcore/300 all, notata = 4
+    # promcore/300 all, notata = 4. 'EMP':3 这个地方是 epoch 的数量 for index embedding and text embedding.
     num_epochs = {'EMP': 3, 'mouse': 5, 'promcore': 10, 'prom300': 10, 'splice': 5, 'tf': 3, 'virus': 8, 'all': 10}
     if isinstance(cfg['task_name'], list):
         cfg['num_epochs'] = max([num_epochs[task_name] for task_name in cfg['task_name']])
@@ -60,7 +60,7 @@ def process_control():
     # 用 dataset indices 来表示数据集的索引，其实就是给每一个 dataset 一个二维的 id (task_index, subset_index),
     #   然后再把这个二维的 integer id 给 map 成一个一维的 integer id
     # task_index：跟上面 cfg['subset_task_namesnames'] 定义的顺序是一样的，i.e.['EMP', 'mouse', 'promcore', 'prom300', 'splice', 'tf', 'virus'] -> [0, 1, 2, 3, 4, 5, 6]
-    # subset_index: 以此类推，跟上面 cfg['subset_names'] 定义的顺序是一样的
+    # subset_index: 以此类推，跟上面 cfg['subset_names'] 定义的顺序是一样的，e.g. 对于 mouse: ['Ch12Nrf2Iggrab', 'Ch12Znf384hpa004051Iggrab', 'MelJundIggrab', 'MelMafkDm2p5dStd', 'MelNelfeIggrab'] -> [0, 1, 2, 3, 4]
     dataset_indices = {}
     index = 0
     for task_name in cfg['subset_names']:
@@ -108,7 +108,7 @@ def process_control():
             cfg['model']['num_datasets'] = len(cfg['subset_name'])
         else:
             cfg['model']['num_datasets'] = 1
-        cfg['model']['num_targets'] = 1
+        cfg['model']['num_targets'] = 1  # 模型输出的类别数量
         cfg['model']['max_length'] = cfg['model']['task_max_length'][cfg['task_name']]
     cfg['model']['freeze'] = cfg['freeze'] == 1
     cfg['model']['embedding_mode'] = cfg['embedding_mode']

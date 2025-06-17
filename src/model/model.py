@@ -18,6 +18,9 @@ def make_core(cfg):
 
 
 def make_model(core, tokenizer, cfg):
+    """ make model based on core model, tokenizer and cfg. 
+    这里其实就是在 build model incrementally, 
+    i.e. 先 build core model, 然后再根据 cfg 的值来决定是否需要添加其他的模块，比如分类头，或者其他的任务相关的模块。"""
     base = model.base(core, cfg)
     base.tokenizer = tokenizer
     base = base.to(cfg['torch_dtype'])
