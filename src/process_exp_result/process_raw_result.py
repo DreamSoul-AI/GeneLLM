@@ -48,6 +48,7 @@ def get_exp_results(result_dir):
 
 
 if __name__ == '__main__':
+    # this script is used to extract experiment results from the result directory and save them to an Excel file.
     # Example usage: python process_exp_result/analyze_results.py --result_dir ./output/result_test
 
     parser = argparse.ArgumentParser(description="Extract experiment results and export to Excel.")
