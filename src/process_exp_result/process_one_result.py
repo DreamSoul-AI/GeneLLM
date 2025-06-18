@@ -2,7 +2,9 @@ import pandas as pd
 import os
 
 # 定义输入文件路径（相对路径示例）
-in_file_path = os.path.join(".", "processed_result", "raw", "result_all_all_embedding_word.xlsx")
+file_name = "result_all_all_embedding_word"
+
+in_file_path = os.path.join(".", "processed_result", "raw", f"{file_name}.xlsx")
 
 # 读取 Excel 文件，生成 DataFrame
 df = pd.read_excel(in_file_path)
@@ -32,7 +34,7 @@ result.columns = [
 ]
 
 # 输出保存到新的 Excel 文件，index=False 不保存行索引
-out_file_path = os.path.join(".", "processed_result", "processed", "result_all_all_embedding_word_processed.xlsx")
+out_file_path = os.path.join(".", "processed_result", "processed", f"{file_name}_processed.xlsx")
 result.to_excel(out_file_path, index=False)
 
 print(f"处理完成，结果已保存到：{out_file_path}")
