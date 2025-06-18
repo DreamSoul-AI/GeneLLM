@@ -62,6 +62,10 @@ def runExperiment():
             test('valid', data_loader['valid'], model, test_logger, task_name, subset_name, task_idx)
             test('test', data_loader['test'], model, test_logger, task_name, subset_name, task_idx)
             result = resume(cfg['checkpoint_path'])
+            # cfg['control']['subset_name_test'] is the name of the test subset, e.g. 'H3' for the EMP task.
+            # cfg['control']['subset_name']: the name of the subset used for training, e.g. 'EMP_all'.
+            cfg['control']['subset_name_test'] = subset_name  
+            cfg['control']['task_name_test'] = task_name
             result = {'cfg': cfg, 'logger': {'train': result['logger'], 'test': test_logger.state_dict()}}
             save(result, cfg['result_path'])
     else:

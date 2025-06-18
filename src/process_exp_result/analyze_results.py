@@ -21,6 +21,7 @@ def extract_metrics(result_path):
         'tag': result['cfg']['tag'],
         "task_name": result['cfg']['control']['task_name'],
         "subset_name": result['cfg']['control']['subset_name'],
+        "subset_name_test":result['cfg']['control']['subset_name_test'],
         "valid_acc": result['logger']['test']['mean']['valid/Accuracy'],
         "valid_F1": result['logger']['test']['mean']['valid/F1'],
         "valid_MCC": result['logger']['test']['mean']['valid/MCC'],
