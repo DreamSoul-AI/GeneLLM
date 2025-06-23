@@ -6,23 +6,21 @@ import model
 from transformers import get_linear_schedule_with_warmup
 
 
-def make_core(cfg):
-    if cfg['model_name'] in ['dnabert2']:
-        core, tokenizer = eval('model.{}(cfg)'.format(cfg['model_name']))
-    else:
-        core, tokenizer = model.make_model_generate(cfg)
-        encoder, encoder_tokenizer = model.dnabert2(cfg)
-        core.encoder = encoder
-        core.encoder_tokenizer = encoder_tokenizer
-    return core, tokenizer
-
-
-def make_model(core, tokenizer, cfg):
+def make_model(cfg):
     """ make model based on core model, tokenizer and cfg. 
     这里其实就是在 build model incrementally, 
     i.e. 先 build core model, 然后再根据 cfg 的值来决定是否需要添加其他的模块，比如分类头，或者其他的任务相关的模块。"""
-    base = model.base(core, cfg)
-    base.tokenizer = tokenizer
+
+    gene_encoder, gene_tokenizer = model.dnabert2(cfg)
+
+    if cfg['model_name'] == 'dnabert2':
+        base = model.base(cfg, gene_encoder)
+        base.gene_tokenizer = gene_tokenizer
+    else:
+        llm, llm_tokenizer = model.make_model_generate(cfg)
+        base = model.base(cfg, gene_encoder, llm)
+        base.gene_tokenizer = gene_tokenizer
+        base.llm_tokenizer = llm_tokenizer
     base = base.to(cfg['torch_dtype'])
     return base
 

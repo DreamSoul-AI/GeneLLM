@@ -6,9 +6,9 @@ import time
 import torch
 import torch.backends.cudnn as cudnn
 from config import cfg, process_args
-from dataset import make_dataset, make_data_loader, process_dataset
+from dataset import make_dataset, make_data_loader, process_dataset, update_dataset
 from metric import make_logger
-from model import make_core, make_model, make_optimizer, make_scheduler
+from model import make_model, make_optimizer, make_scheduler
 from module import check, resume, to_device, process_control
 
 cudnn.benchmark = True
@@ -42,9 +42,9 @@ def runExperiment():
     cfg['best_path'] = os.path.join(cfg['tag_path'], 'best')
     cfg['logger_path'] = os.path.join('output', 'logger', 'train', 'runs', cfg['tag'])
     dataset = make_dataset(cfg['data_name'], task_name=cfg['task_name'], subset_name=cfg['subset_name'])
-    core, tokenizer = make_core(cfg['model'])  # 这里会根据 cfg['model'] 的值来选择不同的模型 core 和 tokenizer。
-    dataset = process_dataset(dataset, tokenizer) #用 tokenizer 对原始数据集进行进一步处理或预处理。进一步 update cfg
-    model = make_model(core, tokenizer, cfg['model']) # 在 core model 的基础上，构建一个具体的模型实例。
+    dataset = process_dataset(dataset)
+    model = make_model(cfg['model'])
+    dataset = update_dataset(dataset, model.gene_tokenizer)
     result = resume(cfg['checkpoint_path'], resume_mode=cfg['resume_mode'])
     if result is None: # train from scratch
         cfg['step'] = 0
@@ -131,7 +131,6 @@ def test(subset, data_loader, model, logger):
         model.train(False)
         num_steps = len(data_loader) if cfg['eval']['num_steps'] == -1 else cfg['eval']['num_steps']
         for i, input in enumerate(data_loader):
-            print(i)
             input_size = len(input[list(input.keys())[0]])
             input = to_device(input, cfg['device'])
             output = model(**input)

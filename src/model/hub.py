@@ -4,7 +4,7 @@ import torch.nn as nn
 
 
 def make_model_generate(cfg):
-    if cfg['model_source'] == 'transformer':
+    if cfg['model_source'] == 'huggingface':
         from huggingface_hub import snapshot_download as hf_snapshot_download
         from transformers import (
             AutoModelForCausalLM,
@@ -30,7 +30,7 @@ def make_model_generate(cfg):
     if not os.path.exists(os.path.join(snapshot_path)):
         if cfg['model_source'] == 'huggingface':
             hf_snapshot_download(repo_id=model_name, local_files_only=False, local_dir=snapshot_path)
-        elif cfg['model_source'] == 'huggingface':
+        elif cfg['model_source'] == 'modelscope':
             ms_snapshot_download(repo_id=model_name, local_files_only=False, local_dir=snapshot_path)
         else:
             raise ValueError('Not valid model source')

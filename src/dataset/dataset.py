@@ -12,7 +12,7 @@ from config import cfg
 def make_dataset(data_name, verbose=True, **kwargs):
     if verbose:
         print('fetching data {}...'.format(data_name))
-    root = os.path.join('data', data_name)    # 根据 data_name 获取数据的根目录
+    root = os.path.join('data', data_name)  # 根据 data_name 获取数据的根目录
     if data_name in ['GUE']:
         task_name = kwargs['task_name']
         subset_name = kwargs['subset_name']
@@ -63,7 +63,7 @@ def make_dataset(data_name, verbose=True, **kwargs):
                         dataset_['test'].append(dataset_test)
             else:
                 raise ValueError('Not valid subset name')
-        else: # for the case e.g. EMP_all_index
+        else:  # for the case e.g. EMP_all_index
             dataset_ = {'train': [], 'valid': [], 'test': []}
             if subset_name == 'all':
                 dataset_ = {'train': [], 'valid': [], 'test': []}
@@ -167,7 +167,94 @@ def make_data_loader(dataset, batch_size, num_steps=None, step=0, step_period=1,
     return data_loader
 
 
-def process_dataset(dataset, tokenizer=None, merge_test=True):
+def process_dataset(dataset):
+    processed_dataset = dataset
+    if isinstance(processed_dataset['train'], list):
+        if cfg['model']['num_targets'] == 1:
+            data_size = [cfg['model']['task_max_length'][processed_dataset['train'][0].task_name]]  # task max length
+            target_size = processed_dataset['train'][0].target_size  # 模型输出的类别个数
+        else:
+            data_size = {}
+            target_size = {}
+            for k in processed_dataset:
+                for i in range(len(processed_dataset[k])):
+                    if processed_dataset[k][i].task_name not in data_size:
+                        data_size[processed_dataset[k][i].task_name] = \
+                            [cfg['model']['task_max_length'][processed_dataset[k][i].task_name]]
+                    if processed_dataset[k][i].task_name not in target_size:
+                        target_size[processed_dataset[k][i].task_name] = processed_dataset[k][i].target_size
+        cfg['num_samples'] = {}
+        for k in processed_dataset:
+            if k == 'train':
+                processed_dataset[k].data_size = data_size
+                processed_dataset[k].target_size = target_size
+                cfg['num_samples'][k] = len(processed_dataset[k])
+            else:
+                cfg['num_samples'][k] = []
+                for i in range(len(processed_dataset[k])):
+                    processed_dataset[k][i].data_size = data_size
+                    processed_dataset[k][i].target_size = target_size
+                    cfg['num_samples'][k].append(len(processed_dataset[k]))
+        cfg['model']['data_size'] = processed_dataset['train'].data_size
+        cfg['model']['target_size'] = processed_dataset['train'].target_size
+    else:
+        cfg['num_samples'] = {k: len(processed_dataset[k]) for k in processed_dataset}
+        cfg['model']['data_size'] = processed_dataset['train'].data_size
+        cfg['model']['target_size'] = processed_dataset['train'].target_size
+
+    # 有些配置参数需要根据数据集的大小来调整，比如 batch size 和 num_steps。
+    if 'num_epochs' in cfg and cfg['num_epochs'] is not None:
+        if cfg['batch_size'] > len(processed_dataset['train']):
+            cfg['batch_size'] = len(processed_dataset['train'])
+            cfg[cfg['tag']]['optimizer']['batch_size'] = {'train': cfg['batch_size'],
+                                                          'test': cfg[cfg['tag']]['optimizer']['test_batch_ratio'] *
+                                                                  cfg['batch_size']}
+        # 计算 update model weights 的总次数
+        cfg['num_steps'] = int(np.ceil(len(processed_dataset['train']) / cfg['batch_size'])) * cfg['num_epochs']
+        # 每一个 epoch evaluate 一次模型。这里只不过是换算成每个 epoch 的 step 数量。
+        cfg['eval_period'] = int(np.ceil(len(processed_dataset['train']) / cfg['batch_size']))
+        cfg[cfg['tag']]['optimizer']['num_steps'] = cfg['num_steps']
+    return processed_dataset
+
+
+# def update_dataset(dataset, tokenizer=None, merge_test=True):
+#     processed_dataset = dataset
+#     if isinstance(processed_dataset['train'], list):
+#         if cfg['model']['num_targets'] == 1:
+#             data_size = [cfg['model']['task_max_length'][processed_dataset['train'][0].task_name]]  # task max length
+#             target_size = processed_dataset['train'][0].target_size  # 模型输出的类别个数
+#         else:
+#             data_size = {}
+#             target_size = {}
+#             for k in processed_dataset:
+#                 for i in range(len(processed_dataset[k])):
+#                     if processed_dataset[k][i].task_name not in data_size:
+#                         data_size[processed_dataset[k][i].task_name] = \
+#                             [cfg['model']['task_max_length'][processed_dataset[k][i].task_name]]
+#                     if processed_dataset[k][i].task_name not in target_size:
+#                         target_size[processed_dataset[k][i].task_name] = processed_dataset[k][i].target_size
+#         cfg['num_samples'] = {}
+#         for k in processed_dataset:
+#             if k == 'train':
+#                 processed_dataset[k].data_size = data_size
+#                 processed_dataset[k].target_size = target_size
+#                 cfg['num_samples'][k] = len(processed_dataset[k])
+#             else:
+#                 cfg['num_samples'][k] = []
+#                 for i in range(len(processed_dataset[k])):
+#                     processed_dataset[k][i].data_size = data_size
+#                     processed_dataset[k][i].target_size = target_size
+#                     cfg['num_samples'][k].append(len(processed_dataset[k]))
+#         cfg['model']['data_size'] = processed_dataset['train'].data_size
+#         cfg['model']['target_size'] = processed_dataset['train'].target_size
+#     else:
+#         cfg['num_samples'] = {k: len(processed_dataset[k]) for k in processed_dataset}
+#         cfg['model']['data_size'] = processed_dataset['train'].data_size
+#         cfg['model']['target_size'] = processed_dataset['train'].target_size
+#     return
+
+
+def update_dataset(dataset, tokenizer=None):
     def tokenize_transform(tokenizer, max_length):
         def transform(input):
             tokenized = tokenizer(
@@ -187,8 +274,9 @@ def process_dataset(dataset, tokenizer=None, merge_test=True):
 
     def dataset_index_transform(input):
         if cfg['task_name'] == 'all':
+            # 给每一个 (task, subtask) e.g. (EMP, xxx) 一个数字 id。
             input['dataset_idx'] = torch.tensor(cfg['dataset_indices'][(input['task_idx'].item(),
-                                                                        input['subset_idx'].item())]) # 给每一个 (task, subtask) e.g. (EMP, xxx) 一个数字 id。
+                                                                        input['subset_idx'].item())])
         else:
             if cfg['subset_name'] == 'all':
                 # 每一个 input 都有一个 subset_idx，表示它属于哪个 （task, subset）
@@ -200,69 +288,21 @@ def process_dataset(dataset, tokenizer=None, merge_test=True):
 
     processed_dataset = dataset
 
-
     if isinstance(processed_dataset['train'], list):
-        if cfg['model']['num_targets'] == 1:
-            data_size = [cfg['model']['task_max_length'][processed_dataset['train'][0].task_name]] # task max length
-            target_size = processed_dataset['train'][0].target_size  # 模型输出的类别个数
-        else:
-            data_size = {}
-            target_size = {}
+        if tokenizer is not None:
+            # processed_dataset = {'train': [dataset1, dataset2, ...], 'valid': [dataset1, dataset2, ...], 'test': [dataset1, dataset2, ...]}
             for k in processed_dataset:
                 for i in range(len(processed_dataset[k])):
-                    if processed_dataset[k][i].task_name not in data_size:
-                        data_size[processed_dataset[k][i].task_name] = \
-                            [cfg['model']['task_max_length'][processed_dataset[k][i].task_name]]
-                    if processed_dataset[k][i].task_name not in target_size:
-                        target_size[processed_dataset[k][i].task_name] = processed_dataset[k][i].target_size
-        if tokenizer is not None:
-            for k in processed_dataset:  # processed_dataset = {'train': [dataset1, dataset2, ...], 'valid': [dataset1, dataset2, ...], 'test': [dataset1, dataset2, ...]}
-                for i in range(len(processed_dataset[k])):
+                    # processed_dataset[k][i] is a dataset object. 这里是 set 每一个 dataset 的 transform
                     processed_dataset[k][i].transform = Compose([
                         dataset_index_transform,
-                        tokenize_transform(tokenizer, cfg['model']['max_length'])])  # processed_dataset[k][i] is a dataset object. 这里是 set 每一个 dataset 的 transform
-        processed_dataset['train'] = torch.utils.data.ConcatDataset(processed_dataset['train']) # 把多个训练子数据集（dataset 对象）合并成一个大的训练数据集。processed_dataset['train']本来是 a list of dataset。concat 后就变成一个
-        if merge_test:
-            processed_dataset['valid'] = torch.utils.data.ConcatDataset(processed_dataset['valid']) # 把 processed_dataset['valid'] 也给 merge 了
-            processed_dataset['test'] = torch.utils.data.ConcatDataset(processed_dataset['test']) # 把 processed_dataset['test'] 也给 merge 了
-            cfg['num_samples'] = {}
-            for k in processed_dataset:
-                processed_dataset[k].data_size = data_size # data_size is task max length
-                processed_dataset[k].target_size = target_size # target_size is the number of classes
-                cfg['num_samples'][k] = len(processed_dataset[k]) # 每个数据集的样本数
-        else:
-            cfg['num_samples'] = {}
-            for k in processed_dataset:
-                if k == 'train':
-                    processed_dataset[k].data_size = data_size
-                    processed_dataset[k].target_size = target_size
-                    cfg['num_samples'][k] = len(processed_dataset[k])
-                else:
-                    cfg['num_samples'][k] = []
-                    for i in range(len(processed_dataset[k])):
-                        processed_dataset[k][i].data_size = data_size
-                        processed_dataset[k][i].target_size = target_size
-                        cfg['num_samples'][k].append(len(processed_dataset[k]))
-        cfg['model']['data_size'] = processed_dataset['train'].data_size
-        cfg['model']['target_size'] = processed_dataset['train'].target_size
+                        tokenize_transform(tokenizer, cfg['model']['max_length'])])
+        # 把多个训练子数据集（dataset 对象）合并成一个大的训练数据集。processed_dataset['train']本来是 a list of dataset。concat 后就变成一个
+        processed_dataset['train'] = torch.utils.data.ConcatDataset(processed_dataset['train'])
     else:
-        cfg['num_samples'] = {k: len(processed_dataset[k]) for k in processed_dataset}
-        cfg['model']['data_size'] = processed_dataset['train'].data_size
-        cfg['model']['target_size'] = processed_dataset['train'].target_size
         if tokenizer is not None:
             for k in processed_dataset:
                 processed_dataset[k].transform = Compose([
                     dataset_index_transform,
                     tokenize_transform(tokenizer, cfg['model']['max_length'])])
-
-    # 有些配置参数需要根据数据集的大小来调整，比如 batch size 和 num_steps。
-    if 'num_epochs' in cfg and cfg['num_epochs'] is not None:
-        if cfg['batch_size'] > len(processed_dataset['train']):
-            cfg['batch_size'] = len(processed_dataset['train'])
-            cfg[cfg['tag']]['optimizer']['batch_size'] = {'train': cfg['batch_size'],
-                                                          'test': cfg[cfg['tag']]['optimizer']['test_batch_ratio'] *
-                                                                  cfg['batch_size']}
-        cfg['num_steps'] = int(np.ceil(len(processed_dataset['train']) / cfg['batch_size'])) * cfg['num_epochs'] # 计算 update model weights 的总次数
-        cfg['eval_period'] = int(np.ceil(len(processed_dataset['train']) / cfg['batch_size'])) # 每一个 epoch evaluate 一次模型。这里只不过是换算成每个 epoch 的 step 数量。
-        cfg[cfg['tag']]['optimizer']['num_steps'] = cfg['num_steps']
     return processed_dataset
