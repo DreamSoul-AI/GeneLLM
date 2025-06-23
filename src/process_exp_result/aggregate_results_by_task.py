@@ -1,8 +1,20 @@
 import pandas as pd
 import os
+import argparse
 
-# 定义输入文件路径（相对路径示例）
-file_name = "result_all_all_embedding_word"
+# 使用说明：在 src/process_exp_result 目录下运行此脚本
+# e.g. python aggregate_results_by_task.py --file_name result_all_all_embedding_word
+
+# ===== 添加命令行参数解析器 =====
+parser = argparse.ArgumentParser(description="Process and summarize test results.")
+parser.add_argument('--file_name', type=str, required=True,
+                    help="Name of the Excel file (without .xlsx extension), e.g., result_all_all_embedding_word")
+args = parser.parse_args()
+ 
+file_name = args.file_name 
+
+
+# ===== 路径拼接 =====
 
 in_file_path = os.path.join(".", "processed_result", "raw", f"{file_name}.xlsx")
 
