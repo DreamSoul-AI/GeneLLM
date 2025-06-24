@@ -5,6 +5,10 @@ import pandas as pd
 import re
 import argparse
 
+
+# in directory src
+# Example usage: python process_exp_result/raw_result_to_excel.py --result_dir ./output/result_test
+
 # add src to sys.path, so that we can import modules from it
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))) # os.path.dirname(__file__) is the directory of this file, i.e. /src/process_exp_result
 from module import load
@@ -22,6 +26,7 @@ def extract_metrics(result_path):
         "task_name": result['cfg']['control']['task_name'],
         "subset_name": result['cfg']['control']['subset_name'],
         "subset_name_test":result['cfg']['control']['subset_name_test'],
+        "task_name_test": result['cfg']['control']['task_name_test'],
         "valid_acc": result['logger']['test']['mean']['valid/Accuracy'],
         "valid_F1": result['logger']['test']['mean']['valid/F1'],
         "valid_MCC": result['logger']['test']['mean']['valid/MCC'],
@@ -48,7 +53,8 @@ def get_exp_results(result_dir):
 
 
 if __name__ == '__main__':
-    # Example usage: python process_exp_result/analyze_results.py --result_dir ./output/result_test
+    # this script is used to extract experiment results from the result directory and save them to an Excel file.
+    # Example usage: python process_exp_result/raw_result_to_excel.py --result_dir ./output/result_test
 
     parser = argparse.ArgumentParser(description="Extract experiment results and export to Excel.")
     parser.add_argument(
