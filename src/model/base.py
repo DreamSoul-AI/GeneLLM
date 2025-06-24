@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 from module import filter_args, load
 from .loss import make_loss
+from .qformer import QFormer
 
 
 class DataEmbedding(nn.Module):
@@ -15,8 +16,9 @@ class DataEmbedding(nn.Module):
         self.num_datasets = num_datasets
 
         if self.embedding_mode == 'index':
-            self.dataset_embedding = nn.Embedding(num_datasets, hidden_size) # 给每一个 sebsets 加一个 index embedding。 e.g.EMP_all_index, EMP 里面有10个 subsets, 为每一个 subset 分配一个 embedding vector(size 也是768)
-            nn.init.normal_(self.dataset_embedding.weight, mean=0.0, std=1e-4) # init embedding vector
+            self.dataset_embedding = nn.Embedding(num_datasets,
+                                                  hidden_size)  # 给每一个 sebsets 加一个 index embedding。 e.g.EMP_all_index, EMP 里面有10个 subsets, 为每一个 subset 分配一个 embedding vector(size 也是768)
+            nn.init.normal_(self.dataset_embedding.weight, mean=0.0, std=1e-4)  # init embedding vector
         elif self.embedding_mode == 'word' and self.task_name == 'all':
             embedding = []
             for task_name in self.task_names:
@@ -43,7 +45,7 @@ class DataEmbedding(nn.Module):
 
 class BertBase(nn.Module):
     def __init__(self, model, hidden_size, target_size, num_datasets, num_targets, task_names, subset_names, task_name,
-                 subset_name, freeze, embedding_mode):# 这里的 model 就是 core model, 就是 DNABert2 用的那个 BERT。
+                 subset_name, freeze, embedding_mode):  # 这里的 model 就是 core model, 就是 DNABert2 用的那个 BERT。
         super().__init__()
         self.model = model
         self.hidden_size = hidden_size
@@ -55,12 +57,12 @@ class BertBase(nn.Module):
         self.task_name = task_name
         self.subset_name = subset_name
         self.freeze = freeze
-        if self.freeze:
+        if self.freeze == 1:
             self.freeze(self.model)
         self.embedding_mode = embedding_mode
         self.dataset_embedding = DataEmbedding(self.embedding_mode, self.task_name, self.task_names, self.num_datasets,
                                                self.hidden_size)
-        if num_targets == 1: # 这个就是分类头的数量
+        if num_targets == 1:  # 这个就是分类头的数量
             self.output_proj = nn.Linear(hidden_size, target_size)
         else:
             output_proj = []
@@ -90,7 +92,7 @@ class BertBase(nn.Module):
 
         if self.embedding_mode != 'none':
             dataset_embedding = self.dataset_embedding(input['dataset_idx'], input['task_idx'])
-            decoder_input = decoder_input + dataset_embedding # 这里的 + 是 element-wise add
+            decoder_input = decoder_input + dataset_embedding  # 这里的 + 是 element-wise add
 
         if self.num_targets == 1:
             output['pred'] = self.output_proj(decoder_input)
@@ -115,52 +117,38 @@ class BertBase(nn.Module):
 
 
 class LLMBase(nn.Module):
-    def __init__(self, gene_encoder, llm=None,
-                 hidden_size=768, target_size=2,
-                 num_datasets=1, num_targets=1,
-                 task_names=None, subset_names=None,
-                 task_name=None, subset_name=None,
-                 freeze=False, embedding_mode='none',
-                 num_query_tokens=32):
+    def __init__(self, gene_encoder, llm, hidden_size, target_size,
+                 num_datasets, num_targets, task_names, subset_names,
+                 task_name, subset_name, freeze, embedding_mode, num_query_tokens):
         super().__init__()
         self.gene_encoder = gene_encoder
         self.llm = llm
-        self.freeze = freeze
+        self.hidden_size = hidden_size
+        self.target_size = target_size
+        self.num_datasets = num_datasets
         self.num_targets = num_targets
-        self.task_names = task_names or []
+        self.task_names = task_names
+        self.subset_names = subset_names
+        self.task_name = task_name
+        self.subset_name = subset_name
+        self.freeze = freeze
         self.embedding_mode = embedding_mode
-
-        if freeze:
-            for p in gene_encoder.parameters():
+        self.num_query_tokens = num_query_tokens
+        if self.freeze >= 1:
+            for p in llm.parameters():
                 p.requires_grad = False
-            if llm:
-                for p in llm.parameters():
+            if self.freeze > 1:
+                for p in gene_encoder.parameters():
                     p.requires_grad = False
-
-        self.dataset_embedding = DataEmbedding(embedding_mode, task_name, task_names, num_datasets, hidden_size)
-
         self.qformer = QFormer(
             num_query_tokens=num_query_tokens,
             hidden_size=hidden_size,
             encoder_width=gene_encoder.config.hidden_size
         )
-
-        if llm:
-            llm_hidden_size = llm.config.hidden_size
-        else:
-            llm_hidden_size = hidden_size
-
-        self.vision_proj = nn.Linear(hidden_size, llm_hidden_size)
-
-        if num_targets == 1:
-            self.output_proj = nn.Linear(llm_hidden_size, target_size)
-        else:
-            self.output_proj = nn.ModuleList([
-                nn.Linear(llm_hidden_size, target_size[task_names[i]])
-                for i in range(num_targets)
-            ])
-
+        llm_hidden_size = llm.config.hidden_size
+        self.gene_proj = nn.Linear(hidden_size, llm_hidden_size)
         self.loss = make_loss
+        exit()
 
     def forward(self, **input):
         # Step 1: Encode gene sequence
@@ -205,6 +193,7 @@ class LLMBase(nn.Module):
                 output['pred'] = output['pred'][input['test_task_idx']]
         return output
 
+
 def base(cfg, gene_encoder, llm_encoder=None):
     """
     Create a base model (a computation graph) based on the configuration. 这里就是在 core model 的基础上，根据 cfg 的值来决定是否需要添加其他的模块，比如分类头，或者其他的任务相关的模块。
@@ -224,9 +213,10 @@ def base(cfg, gene_encoder, llm_encoder=None):
                          task_name,
                          subset_name, freeze, embedding_mode)  # 定义 BertBase 这个 model,i.e. a computation graph
     else:
+        num_query_tokens = cfg['num_query_tokens']
         # https://github.com/salesforce/LAVIS/blob/main/lavis/models/blip2_models/blip2_qformer.py
         model = LLMBase(gene_encoder, llm_encoder, hidden_size, target_size,
-                                  num_datasets, num_targets,
-                                  task_names, subset_names,
-                                  task_name, subset_name, freeze, embedding_mode)
-    return model 
+                        num_datasets, num_targets,
+                        task_names, subset_names,
+                        task_name, subset_name, freeze, embedding_mode, num_query_tokens)
+    return model

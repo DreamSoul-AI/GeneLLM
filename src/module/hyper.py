@@ -110,8 +110,10 @@ def process_control():
             cfg['model']['num_datasets'] = 1
         cfg['model']['num_targets'] = 1  # 模型输出的类别数量
         cfg['model']['max_length'] = cfg['model']['task_max_length'][cfg['task_name']]
-    cfg['model']['freeze'] = cfg['freeze'] == 1
+    cfg['model']['freeze'] = cfg['freeze']
     cfg['model']['embedding_mode'] = cfg['embedding_mode']
+    cfg['model']['num_query_tokens'] = 64
+
 
     # https://github.com/MAGICS-LAB/DNABERT_2/blob/main/finetune/train.py
     # https://github.com/MAGICS-LAB/DNABERT_2/blob/main/finetune/scripts/run_dnabert2.sh
