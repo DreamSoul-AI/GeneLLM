@@ -1,9 +1,13 @@
 import pandas as pd
 import os
 import argparse
+import sys
 
-# 使用说明：在 src/process_exp_result 目录下运行此脚本
-# e.g. python aggregate_results_by_task.py --file_name result_all_all_embedding_word
+# print(os.getcwd())
+# print(sys.path)
+
+# 使用说明：在 src 目录下运行此脚本
+# e.g. python process_exp_result/aggregate_results_by_task.py --file_name result_all_all_embedding_word
 
 # ===== 添加命令行参数解析器 =====
 parser = argparse.ArgumentParser(description="Process and summarize test results.")
@@ -16,7 +20,7 @@ file_name = args.file_name
 
 # ===== 路径拼接 =====
 
-in_file_path = os.path.join(".", "processed_result", "raw", f"{file_name}.xlsx")
+in_file_path = os.path.join(".", "process_exp_result","processed_result", "raw", f"{file_name}.xlsx")
 
 # 读取 Excel 文件，生成 DataFrame
 df = pd.read_excel(in_file_path)
@@ -46,7 +50,7 @@ result.columns = [
 ]
 
 # 输出保存到新的 Excel 文件，index=False 不保存行索引
-out_file_path = os.path.join(".", "processed_result", "processed", f"{file_name}_processed.xlsx")
+out_file_path = os.path.join(".", "process_exp_result", "processed_result", "processed", f"{file_name}_processed.xlsx")
 result.to_excel(out_file_path, index=False)
 
 print(f"处理完成，结果已保存到：{out_file_path}")
