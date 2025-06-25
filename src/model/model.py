@@ -17,8 +17,9 @@ def make_model(cfg):
         base = model.base(cfg, gene_encoder)
         base.gene_tokenizer = gene_tokenizer
     else:
+        qformer = model.qformer(cfg)
         llm, llm_tokenizer = model.make_model_generate(cfg)
-        base = model.base(cfg, gene_encoder, llm)
+        base = model.base(cfg, gene_encoder, llm, qformer)
         base.gene_tokenizer = gene_tokenizer
         base.llm_tokenizer = llm_tokenizer
     base = base.to(cfg['torch_dtype'])

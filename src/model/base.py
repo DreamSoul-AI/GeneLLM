@@ -117,9 +117,9 @@ class BertBase(nn.Module):
 
 
 class LLMBase(nn.Module):
-    def __init__(self, gene_encoder, llm, hidden_size, target_size,
+    def __init__(self, gene_encoder, llm, qformer, hidden_size, target_size,
                  num_datasets, num_targets, task_names, subset_names,
-                 task_name, subset_name, freeze, embedding_mode, num_query_tokens):
+                 task_name, subset_name, freeze, embedding_mode):
         super().__init__()
         self.gene_encoder = gene_encoder
         self.llm = llm
@@ -133,18 +133,13 @@ class LLMBase(nn.Module):
         self.subset_name = subset_name
         self.freeze = freeze
         self.embedding_mode = embedding_mode
-        self.num_query_tokens = num_query_tokens
         if self.freeze >= 1:
             for p in llm.parameters():
                 p.requires_grad = False
             if self.freeze > 1:
                 for p in gene_encoder.parameters():
                     p.requires_grad = False
-        self.qformer = QFormer(
-            num_query_tokens=num_query_tokens,
-            hidden_size=hidden_size,
-            encoder_width=gene_encoder.config.hidden_size
-        )
+        self.qformer = qformer
         llm_hidden_size = llm.config.hidden_size
         self.gene_proj = nn.Linear(hidden_size, llm_hidden_size)
         self.loss = make_loss
@@ -194,7 +189,7 @@ class LLMBase(nn.Module):
         return output
 
 
-def base(cfg, gene_encoder, llm_encoder=None):
+def base(cfg, gene_encoder, llm_encoder=None, qformer=None):
     """
     Create a base model (a computation graph) based on the configuration. 这里就是在 core model 的基础上，根据 cfg 的值来决定是否需要添加其他的模块，比如分类头，或者其他的任务相关的模块。
     """
@@ -213,10 +208,9 @@ def base(cfg, gene_encoder, llm_encoder=None):
                          task_name,
                          subset_name, freeze, embedding_mode)  # 定义 BertBase 这个 model,i.e. a computation graph
     else:
-        num_query_tokens = cfg['num_query_tokens']
-        # https://github.com/salesforce/LAVIS/blob/main/lavis/models/blip2_models/blip2_qformer.py
-        model = LLMBase(gene_encoder, llm_encoder, hidden_size, target_size,
+        # https://github.com/salesforce/LAVIS/blob/main/lavis/models/blip2_models/blip2_vicuna_instruct.py
+        model = LLMBase(gene_encoder, llm_encoder, qformer, hidden_size, target_size,
                         num_datasets, num_targets,
                         task_names, subset_names,
-                        task_name, subset_name, freeze, embedding_mode, num_query_tokens)
+                        task_name, subset_name, freeze, embedding_mode)
     return model

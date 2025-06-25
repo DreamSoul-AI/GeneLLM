@@ -85,6 +85,8 @@ def process_control():
     cfg['model']['dnabert2'] = {'hidden_size': 768}
     cfg['model']['padding_side'] = 'right'
     cfg['model']['torch_dtype'] = torch.float32
+    
+    # TODO: check qwen hidden_size
     # https://github.com/MAGICS-LAB/DNABERT_2/blob/main/finetune/scripts/run_dnabert2.sh
     task_max_length = {'EMP': 128, 'mouse': 30, 'promcore': 20, 'prom300': 70, 'splice': 80, 'tf': 30, 'virus': 256}
     cfg['model']['task_max_length'] = task_max_length
@@ -112,7 +114,9 @@ def process_control():
         cfg['model']['max_length'] = cfg['model']['task_max_length'][cfg['task_name']]
     cfg['model']['freeze'] = cfg['freeze']
     cfg['model']['embedding_mode'] = cfg['embedding_mode']
-    cfg['model']['num_query_tokens'] = 64
+    cfg['model']['qformer'] = {'bert_model_name': 'bert-base-uncased', 'num_query_tokens': 64,
+                               'hidden_size': 1024, 'encoder_width': cfg['model']['dnabert2']['hidden_size'],
+                               'cross_attention_freq': 2}
 
 
     # https://github.com/MAGICS-LAB/DNABERT_2/blob/main/finetune/train.py
