@@ -1,5 +1,4 @@
 import os
-
 import torch
 import torch.nn as nn
 from transformers import BertConfig, BertModel
@@ -18,23 +17,22 @@ class QFormer(nn.Module):
             encoder_attention_mask = torch.ones(
                 encoder_hidden_states.size()[:-1], dtype=torch.bool, device=encoder_hidden_states.device
             )
-        outputs = self.backbone(
+        output = self.backbone(
             inputs_embeds=query_tokens,
             encoder_hidden_states=encoder_hidden_states,
             encoder_attention_mask=encoder_attention_mask,
+            use_cache=True,
             return_dict=True,
         )
-        return outputs.last_hidden_state  # [B, Q, H]
+        return output.last_hidden_state
 
 
 def qformer(cfg):
     if cfg['model_source'] == 'huggingface':
         from huggingface_hub import snapshot_download as hf_snapshot_download
-        from transformers import BertLMHeadModel
         identifier = 'google-bert'
     elif cfg['model_source'] == 'modelscope':
         from modelscope.hub.snapshot_download import snapshot_download as ms_snapshot_download
-        from transformers import BertLMHeadModel
         identifier = 'AI-ModelScope'
     else:
         raise ValueError('Not valid model source')
@@ -61,6 +59,6 @@ def qformer(cfg):
     config.add_cross_attention = True
     config.cross_attention_freq = cross_attention_freq
     config.encoder_width = encoder_width
-    backbone = BertLMHeadModel.from_pretrained(snapshot_path, config=config)
+    backbone = BertModel.from_pretrained(snapshot_path, config=config)
     model = QFormer(backbone, num_query_tokens, hidden_size)
     return model

@@ -115,7 +115,8 @@ def process_control():
     cfg['model']['freeze'] = cfg['freeze']
     cfg['model']['embedding_mode'] = cfg['embedding_mode']
     cfg['model']['qformer'] = {'bert_model_name': 'bert-base-uncased', 'num_query_tokens': 64,
-                               'hidden_size': 1024, 'encoder_width': cfg['model']['dnabert2']['hidden_size'],
+                               'hidden_size': cfg['model']['dnabert2']['hidden_size'],
+                               'encoder_width': cfg['model']['dnabert2']['hidden_size'],
                                'cross_attention_freq': 2}
 
 

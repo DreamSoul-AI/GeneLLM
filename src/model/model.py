@@ -11,15 +11,15 @@ def make_model(cfg):
     这里其实就是在 build model incrementally, 
     i.e. 先 build core model, 然后再根据 cfg 的值来决定是否需要添加其他的模块，比如分类头，或者其他的任务相关的模块。"""
 
-    gene_encoder, gene_tokenizer = model.dnabert2(cfg)
-
     if cfg['model_name'] == 'dnabert2':
+        gene_encoder, gene_tokenizer = model.dnabert2(cfg)
         base = model.base(cfg, gene_encoder)
         base.gene_tokenizer = gene_tokenizer
     else:
+        gene_encoder, gene_tokenizer = model.dnabert2(cfg)
         qformer = model.qformer(cfg)
         llm, llm_tokenizer = model.make_model_generate(cfg)
-        base = model.base(cfg, gene_encoder, llm, qformer)
+        base = model.base(cfg, gene_encoder, qformer=qformer, llm=llm)
         base.gene_tokenizer = gene_tokenizer
         base.llm_tokenizer = llm_tokenizer
     base = base.to(cfg['torch_dtype'])

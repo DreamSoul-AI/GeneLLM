@@ -1,6 +1,7 @@
 import os
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from module import filter_args, load
 from .loss import make_loss
 from .qformer import QFormer
@@ -117,11 +118,12 @@ class BertBase(nn.Module):
 
 
 class LLMBase(nn.Module):
-    def __init__(self, gene_encoder, llm, qformer, hidden_size, target_size,
+    def __init__(self, gene_encoder, qformer, llm, hidden_size, target_size,
                  num_datasets, num_targets, task_names, subset_names,
                  task_name, subset_name, freeze, embedding_mode):
         super().__init__()
         self.gene_encoder = gene_encoder
+        self.qformer = qformer
         self.llm = llm
         self.hidden_size = hidden_size
         self.target_size = target_size
@@ -139,57 +141,49 @@ class LLMBase(nn.Module):
             if self.freeze > 1:
                 for p in gene_encoder.parameters():
                     p.requires_grad = False
-        self.qformer = qformer
         llm_hidden_size = llm.config.hidden_size
         self.gene_proj = nn.Linear(hidden_size, llm_hidden_size)
         self.loss = make_loss
-        exit()
 
     def forward(self, **input):
         # Step 1: Encode gene sequence
         gene_input = filter_args(self.gene_encoder.forward, input)
-        with torch.no_grad() if self.freeze else torch.enable_grad():
-            gene_output = self.gene_encoder(**gene_input)[0]  # [B, L, H]
-
+        if self.freeze > 1:
+            with torch.no_grad():
+                encoder_outputs, _ = self.gene_encoder(**gene_input) # [B, L, H]
+        else:
+            encoder_outputs, _ = self.gene_encoder(**gene_input)
         # Step 2: Q-Former attends to gene features
-        q_output = self.qformer(gene_output)  # [B, Q, H_qformer]
-        q_output_proj = self.vision_proj(q_output)  # [B, Q, H_lm]
-
-        if self.embedding_mode != 'none':
-            dataset_embedding = self.dataset_embedding(input['dataset_idx'], input.get('task_idx'))
-            q_output_proj = q_output_proj + dataset_embedding.unsqueeze(1)
+        q_output = self.qformer(encoder_outputs)  # [B, Q, H_qformer]
+        q_output_proj = self.gene_proj(q_output)  # [B, Q, H_lm]
+        q_output_proj = F.normalize(q_output_proj, dim=-1)
+        print(q_output_proj.shape)
+        exit()
 
         # Step 3: LLM (or just average)
-        if self.llm:
-            with torch.no_grad() if self.freeze else torch.enable_grad():
-                llm_output = self.llm(inputs_embeds=q_output_proj)
-                pooled = llm_output.last_hidden_state.mean(dim=1)
-        else:
-            pooled = q_output_proj.mean(dim=1)
+        decoder_input_ids = text_tokens.input_ids.clone()
+        decoder_input_ids[:, 0] = self.tokenizer.bos_token_id
+        labels = decoder_input_ids.masked_fill(
+            decoder_input_ids == self.tokenizer.pad_token_id, -100
+        )
 
-        # Step 4: Classification
-        output = {}
-        if self.num_targets == 1:
-            output['pred'] = self.output_proj(pooled)
-            output['loss'] = self.loss(output['pred'], input['target'])
-        else:
-            loss = 0
-            output['pred'] = {}
-            output['loss_task'] = {}
-            unique_task_idx = torch.unique(input['task_idx'])
-            for i in unique_task_idx:
-                i = i.item()
-                mask = input['task_idx'] == i
-                pred_i = self.output_proj[i](pooled[mask])
-                loss += self.loss(pred_i, input['target'][mask], reduction='sum')
-                output['pred'][i] = pred_i
-            output['loss'] = loss / pooled.size(0)
-            if not self.training and 'test_task_idx' in input:
-                output['pred'] = output['pred'][input['test_task_idx']]
+        query_atts = torch.ones(query_tokens.size()[:-1], dtype=torch.long).to(
+            image.device
+        )
+        attention_mask = torch.cat([query_atts, text_tokens.attention_mask], dim=1)
+        lm_output = self.Qformer(
+            decoder_input_ids,
+            attention_mask=attention_mask,
+            past_key_values=query_output.past_key_values,
+            return_dict=True,
+            labels=labels,
+        )
+
+        loss_lm = lm_output.loss
         return output
 
 
-def base(cfg, gene_encoder, llm_encoder=None, qformer=None):
+def base(cfg, gene_encoder, qformer=None, llm=None):
     """
     Create a base model (a computation graph) based on the configuration. 这里就是在 core model 的基础上，根据 cfg 的值来决定是否需要添加其他的模块，比如分类头，或者其他的任务相关的模块。
     """
@@ -209,8 +203,7 @@ def base(cfg, gene_encoder, llm_encoder=None, qformer=None):
                          subset_name, freeze, embedding_mode)  # 定义 BertBase 这个 model,i.e. a computation graph
     else:
         # https://github.com/salesforce/LAVIS/blob/main/lavis/models/blip2_models/blip2_vicuna_instruct.py
-        model = LLMBase(gene_encoder, llm_encoder, qformer, hidden_size, target_size,
-                        num_datasets, num_targets,
-                        task_names, subset_names,
+        model = LLMBase(gene_encoder, qformer, llm, hidden_size, target_size,
+                        num_datasets, num_targets, task_names, subset_names,
                         task_name, subset_name, freeze, embedding_mode)
     return model

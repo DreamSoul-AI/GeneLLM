@@ -13,11 +13,11 @@ from module import check, resume, to_device, process_control
 
 cudnn.benchmark = True
 parser = argparse.ArgumentParser(description='cfg')
-for k in cfg: # copy config paras to parser.
+for k in cfg:  # copy config paras to parser.
     exec('parser.add_argument(\'--{0}\', default=cfg[\'{0}\'], type=type(cfg[\'{0}\']))'.format(k))
-parser.add_argument('--control_name', default=None, type=str) 
-args = vars(parser.parse_args()) # parser.parse_args() parses the args, vars() returns a python dict.
-process_args(args) # update cfg with args from command line
+parser.add_argument('--control_name', default=None, type=str)
+args = vars(parser.parse_args())  # parser.parse_args() parses the args, vars() returns a python dict.
+process_args(args)  # update cfg with args from command line
 
 
 def main():
@@ -25,10 +25,10 @@ def main():
     for i in range(cfg['num_experiments']):
         tag_list = [str(seeds[i]), cfg['control_name']]
         cfg['tag'] = '_'.join([x for x in tag_list if x])
-        process_control() # 把 cfg 这个实验配置参数改得更容易实用. 然后再加入训练时候需要用的 hyper parameters
+        process_control()  # 把 cfg 这个实验配置参数改得更容易实用. 然后再加入训练时候需要用的 hyper parameters
         print('Experiment: {}'.format(cfg['tag']))
         # code above is for updating cfg for the current experiment.
-        runExperiment() # the main worker
+        runExperiment()  # the main worker
     return
 
 
@@ -46,7 +46,7 @@ def runExperiment():
     model = make_model(cfg['model'])
     dataset = update_dataset(dataset, model.gene_tokenizer)
     result = resume(cfg['checkpoint_path'], resume_mode=cfg['resume_mode'])
-    if result is None: # train from scratch
+    if result is None:  # train from scratch
         cfg['step'] = 0
         model = model.to(cfg['device'])
         optimizer = make_optimizer(model.parameters(), cfg[cfg['tag']]['optimizer'])
@@ -70,8 +70,8 @@ def runExperiment():
                                    cfg['collate_mode'], cfg['seed'])
     data_iterator = enumerate(data_loader['train'])
     while cfg['step'] < cfg['num_steps']:
-        train(data_iterator, model, optimizer, scheduler, logger) # train one epoch 
-        test('valid', data_loader['valid'], model, logger) 
+        train(data_iterator, model, optimizer, scheduler, logger)  # train one epoch
+        test('valid', data_loader['valid'], model, logger)
         test('test', data_loader['test'], model, logger)
         result = {'cfg': cfg, 'model': model.state_dict(),
                   'optimizer': optimizer.state_dict(), 'scheduler': scheduler.state_dict(),
@@ -96,15 +96,17 @@ def train(data_loader, model, optimizer, scheduler, logger):
             output = model(**input)
             loss = 1 / cfg['step_period'] * output['loss']
             loss.backward()
-            if (i + 1) % cfg['step_period'] == 0:  # 只有在“完成一个 step”时，才会更新一次模型参数。(i + 1) % cfg['step_period'] == 0 就是在判断在哪些 i 的地方去更新模型参数（你把这些数字写出来就明白了）。
+            if (i + 1) % cfg[
+                'step_period'] == 0:  # 只有在“完成一个 step”时，才会更新一次模型参数。(i + 1) % cfg['step_period'] == 0 就是在判断在哪些 i 的地方去更新模型参数（你把这些数字写出来就明白了）。
                 optimizer.step()
                 scheduler.step()
                 optimizer.zero_grad()
             evaluation = logger.evaluate('train', 'batch', input, output)
             logger.append(evaluation, 'train', n=input_size)
-            idx = cfg['step'] % cfg['eval_period'] # 表示当前 step 在一个 eval_period 内的相对位置
+            idx = cfg['step'] % cfg['eval_period']  # 表示当前 step 在一个 eval_period 内的相对位置
             # 在训练过程中定期打印和记录训练进度信息
-            if idx % max(int(cfg['eval_period'] * cfg['log_interval']), 1) == 0 and (i + 1) % cfg['step_period'] == 0: # 只有在“到达日志打印间隔”且“完成一个 step”时，才会打印和记录一次训练进度信息。
+            if idx % max(int(cfg['eval_period'] * cfg['log_interval']), 1) == 0 and (i + 1) % cfg[
+                'step_period'] == 0:  # 只有在“到达日志打印间隔”且“完成一个 step”时，才会打印和记录一次训练进度信息。
                 step_time = (time.time() - start_time) / (idx + 1)
                 lr = optimizer.param_groups[0]['lr']
                 epoch_finished_time = datetime.timedelta(
@@ -119,7 +121,7 @@ def train(data_loader, model, optimizer, scheduler, logger):
                                  'Experiment Finished Time: {}'.format(exp_finished_time)]}
                 logger.append(info, 'train')
                 print(logger.write('train'))
-            if (i + 1) % cfg['step_period'] == 0:  
+            if (i + 1) % cfg['step_period'] == 0:
                 cfg['step'] += 1
             if (idx + 1) % cfg['eval_period'] == 0 and (i + 1) % cfg['step_period'] == 0:
                 break
