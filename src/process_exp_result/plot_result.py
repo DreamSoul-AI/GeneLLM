@@ -21,11 +21,8 @@ in_file_path = os.path.join(".", "process_exp_result","processed_result", "proce
 
 
 # 读取你的合并结果文件
-df = pd.read_excel(in_file_path)  # 替换为你实际的文件路径
+df = pd.read_excel(in_file_path)  
 
-# 修改 df 的 values, 需要乘上 100
-df['test_MCC_best'] = df['test_MCC_best'] * 100
-df['test_F1_best'] = df['test_F1_best'] * 100
 
 # 添加 label 字段
 df['label'] = df['task_name_test'] + '_' + df['subset_name_test']
@@ -37,23 +34,36 @@ width = 0.35
 
 # 初始化数据列
 bar1_values = []
+bar1_errors = []
 bar2_values = []
 bar_labels = []
 
 for idx, row in df.iterrows():
     if row['task_name_test'] == 'virus':
-        bar1_values.append(row['test_F1_best'])
+        # F1：从 test_F1_list 中计算均值和 std
+        f1_list = eval(row['test_F1_list'])  # 如果是字符串格式的 list
+        f1_list = [v * 100 for v in f1_list]  # 转为百分数
+        bar1_values.append(np.mean(f1_list))
+        bar1_errors.append(np.std(f1_list))
         bar2_values.append(row['test_F1_DNABert2'])
         bar_labels.append('F1')
     else:
-        bar1_values.append(row['test_MCC_best'])
+        # MCC：从 test_MCC_list 中计算均值和 std
+        mcc_list = eval(row['test_MCC_list'])
+        mcc_list = [v * 100 for v in mcc_list]
+        bar1_values.append(np.mean(mcc_list))
+        bar1_errors.append(np.std(mcc_list))
         bar2_values.append(row['test_MCC_DNABert2'])
         bar_labels.append('MCC')
 
 # 画图
 fig, ax = plt.subplots(figsize=(12, 6))
 
-bar1 = ax.bar(x - width/2, bar1_values, width, label='Experiment', color='steelblue')
+# Bar1: 实验结果 + error bar
+bar1 = ax.bar(x - width/2, bar1_values, width, yerr=bar1_errors, 
+              label='Experiment', color='steelblue', capsize=5)
+
+# Bar2: DNABert2 单值
 bar2 = ax.bar(x + width/2, bar2_values, width, label='DNABert2', color='orange')
 
 # 横轴设置
