@@ -23,8 +23,7 @@ def dnabert2(cfg):
                                               use_fast=True, padding_side=cfg['padding_side'])
     config = BertConfig.from_pretrained(model_name_or_path,
                                         cache_dir=cache_config_path, local_files_only=local_files_only['config'])
-    config.torch_dtype = cfg['torch_dtype']
+    config.torch_dtype = torch.float32
     model = AutoModel.from_pretrained(model_name_or_path, trust_remote_code=True, config=config,
-                                      cache_dir=cache_model_path, local_files_only=local_files_only['model'],
-                                      torch_dtype=cfg['torch_dtype'])
+                                      cache_dir=cache_model_path, local_files_only=local_files_only['model'])
     return model, tokenizer

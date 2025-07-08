@@ -3,8 +3,9 @@ import os
 import torch
 from transformers import AutoTokenizer, AutoModel
 from config import cfg
-from dataset import make_dataset, make_data_loader, process_dataset
+from dataset import make_dataset, make_data_loader, process_dataset, update_dataset
 from module import save, to_device, process_control
+from model import make_model_generate
 
 
 def move_prom_datasets():
@@ -110,7 +111,8 @@ def make_embeddings():
         if os.path.exists(os.path.join(cache_dir, model_name, key)):
             local_files_only[key] = True
     tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=cache_tokenizer_path,
-                                              local_files_only=local_files_only['tokenizer'])  # local_files_only, if True, will only load from local files
+                                              local_files_only=local_files_only[
+                                                  'tokenizer'])  # local_files_only, if True, will only load from local files
     model = AutoModel.from_pretrained(model_name, cache_dir=cache_model_path,
                                       local_files_only=local_files_only['model'])
     if torch.cuda.is_available():
@@ -130,6 +132,23 @@ def make_embeddings():
             output = model(**input)
             output = to_device(output, 'cpu')
         save(output, os.path.join(base_folder, task_name))
+    return
+
+
+def make_tokens():
+    cfg['model']['model_name'] = 'Qwen2.5-0.5B-Instruct'
+    _, tokenizer = make_model_generate(cfg['model'])
+
+    base_folder = os.path.join('data', 'GUE', 'instruction_token')
+    description_path = os.path.join(".", "dataset", "description")
+    instruction = cfg['model']['instruction']['GUE']
+    for task_name in task_names:
+        task_file_path = os.path.join(description_path, f"{task_name}.txt")
+        with open(task_file_path, 'r') as f:
+            description_i = f.read().replace('\n', '')
+        instruction_i = '{} {}'.format(description_i, instruction)
+        input = tokenizer(instruction_i, return_tensors='pt')
+        save(input, os.path.join(base_folder, task_name))
     return
 
 
@@ -156,12 +175,15 @@ if __name__ == "__main__":
     move_mouse_datasets()
     move_tf_datasets()
     make_embeddings()
+    make_tokens()
     with torch.no_grad():
         for data_name in data_names:
             for task_name in task_names:
                 for subset_name in subset_names[task_name]:
+                    print(data_name, task_name, subset_name)
                     dataset = make_dataset(data_name, task_name=task_name, subset_name=subset_name)
                     process_dataset(dataset)
+                    dataset = update_dataset(dataset)
                     cfg['step'] = 0
                     data_loader = make_data_loader(dataset, cfg[cfg['tag']]['optimizer']['batch_size'], shuffle=False)
                     print(data_name, task_name, subset_name)

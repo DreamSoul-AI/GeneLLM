@@ -167,7 +167,7 @@ def make_data_loader(dataset, batch_size, num_steps=None, step=0, step_period=1,
     return data_loader
 
 
-def process_dataset(dataset):
+def process_dataset(dataset, merge_test=True):
     processed_dataset = dataset
     if isinstance(processed_dataset['train'], list):
         if cfg['model']['num_targets'] == 1:
@@ -185,7 +185,8 @@ def process_dataset(dataset):
                         target_size[processed_dataset[k][i].task_name] = processed_dataset[k][i].target_size
         cfg['num_samples'] = {}
         for k in processed_dataset:
-            if k == 'train':
+            if k == 'train' or merge_test:
+                processed_dataset[k] = torch.utils.data.ConcatDataset(processed_dataset[k])
                 processed_dataset[k].data_size = data_size
                 processed_dataset[k].target_size = target_size
                 cfg['num_samples'][k] = len(processed_dataset[k])
@@ -215,43 +216,6 @@ def process_dataset(dataset):
         cfg['eval_period'] = int(np.ceil(len(processed_dataset['train']) / cfg['batch_size']))
         cfg[cfg['tag']]['optimizer']['num_steps'] = cfg['num_steps']
     return processed_dataset
-
-
-# def update_dataset(dataset, tokenizer=None, merge_test=True):
-#     processed_dataset = dataset
-#     if isinstance(processed_dataset['train'], list):
-#         if cfg['model']['num_targets'] == 1:
-#             data_size = [cfg['model']['task_max_length'][processed_dataset['train'][0].task_name]]  # task max length
-#             target_size = processed_dataset['train'][0].target_size  # 模型输出的类别个数
-#         else:
-#             data_size = {}
-#             target_size = {}
-#             for k in processed_dataset:
-#                 for i in range(len(processed_dataset[k])):
-#                     if processed_dataset[k][i].task_name not in data_size:
-#                         data_size[processed_dataset[k][i].task_name] = \
-#                             [cfg['model']['task_max_length'][processed_dataset[k][i].task_name]]
-#                     if processed_dataset[k][i].task_name not in target_size:
-#                         target_size[processed_dataset[k][i].task_name] = processed_dataset[k][i].target_size
-#         cfg['num_samples'] = {}
-#         for k in processed_dataset:
-#             if k == 'train':
-#                 processed_dataset[k].data_size = data_size
-#                 processed_dataset[k].target_size = target_size
-#                 cfg['num_samples'][k] = len(processed_dataset[k])
-#             else:
-#                 cfg['num_samples'][k] = []
-#                 for i in range(len(processed_dataset[k])):
-#                     processed_dataset[k][i].data_size = data_size
-#                     processed_dataset[k][i].target_size = target_size
-#                     cfg['num_samples'][k].append(len(processed_dataset[k]))
-#         cfg['model']['data_size'] = processed_dataset['train'].data_size
-#         cfg['model']['target_size'] = processed_dataset['train'].target_size
-#     else:
-#         cfg['num_samples'] = {k: len(processed_dataset[k]) for k in processed_dataset}
-#         cfg['model']['data_size'] = processed_dataset['train'].data_size
-#         cfg['model']['target_size'] = processed_dataset['train'].target_size
-#     return
 
 
 def update_dataset(dataset, tokenizer=None):
@@ -288,20 +252,37 @@ def update_dataset(dataset, tokenizer=None):
 
     processed_dataset = dataset
 
-    if isinstance(processed_dataset['train'], list):
-        if tokenizer is not None:
-            # processed_dataset = {'train': [dataset1, dataset2, ...], 'valid': [dataset1, dataset2, ...], 'test': [dataset1, dataset2, ...]}
-            for k in processed_dataset:
+    # if isinstance(processed_dataset['train'], list):
+    #     if tokenizer is not None:
+    #         # processed_dataset = {'train': [dataset1, dataset2, ...], 'valid': [dataset1, dataset2, ...], 'test': [dataset1, dataset2, ...]}
+    #         for k in processed_dataset:
+    #             for i in range(len(processed_dataset[k])):
+    #                 # processed_dataset[k][i] is a dataset object. 这里是 set 每一个 dataset 的 transform
+    #                 processed_dataset[k][i].transform = Compose([
+    #                     dataset_index_transform,
+    #                     tokenize_transform(tokenizer, cfg['model']['max_length'])])
+    #     # 把多个训练子数据集（dataset 对象）合并成一个大的训练数据集。processed_dataset['train']本来是 a list of dataset。concat 后就变成一个
+    #     # processed_dataset['train'] = torch.utils.data.ConcatDataset(processed_dataset['train'])
+    # else:
+    #     if tokenizer is not None:
+    #         for k in processed_dataset:
+    #             print(k)
+    #             processed_dataset[k].transform = Compose([
+    #                 dataset_index_transform,
+    #                 tokenize_transform(tokenizer, cfg['model']['max_length'])])
+    if tokenizer is not None:
+        for k in processed_dataset:
+            if isinstance(processed_dataset[k], list):
                 for i in range(len(processed_dataset[k])):
-                    # processed_dataset[k][i] is a dataset object. 这里是 set 每一个 dataset 的 transform
                     processed_dataset[k][i].transform = Compose([
                         dataset_index_transform,
                         tokenize_transform(tokenizer, cfg['model']['max_length'])])
-        # 把多个训练子数据集（dataset 对象）合并成一个大的训练数据集。processed_dataset['train']本来是 a list of dataset。concat 后就变成一个
-        processed_dataset['train'] = torch.utils.data.ConcatDataset(processed_dataset['train'])
-    else:
-        if tokenizer is not None:
-            for k in processed_dataset:
+            elif isinstance(processed_dataset[k], torch.utils.data.ConcatDataset):
+                for i in range(len(processed_dataset[k].datasets)):
+                    processed_dataset[k].datasets[i].transform = Compose([
+                        dataset_index_transform,
+                        tokenize_transform(tokenizer, cfg['model']['max_length'])])
+            else:
                 processed_dataset[k].transform = Compose([
                     dataset_index_transform,
                     tokenize_transform(tokenizer, cfg['model']['max_length'])])

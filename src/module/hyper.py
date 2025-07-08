@@ -84,9 +84,9 @@ def process_control():
 
     cfg['model']['dnabert2'] = {'hidden_size': 768}
     cfg['model']['padding_side'] = 'right'
-    cfg['model']['torch_dtype'] = torch.float32
-    
-    # TODO: check qwen hidden_size
+    cfg['model']['instruction'] = {
+        'GUE': 'Based on the following DNA sequence, what is your prediction? (True/False)'}
+
     # https://github.com/MAGICS-LAB/DNABERT_2/blob/main/finetune/scripts/run_dnabert2.sh
     task_max_length = {'EMP': 128, 'mouse': 30, 'promcore': 20, 'prom300': 70, 'splice': 80, 'tf': 30, 'virus': 256}
     cfg['model']['task_max_length'] = task_max_length
@@ -118,7 +118,6 @@ def process_control():
                                'hidden_size': cfg['model']['dnabert2']['hidden_size'],
                                'encoder_width': cfg['model']['dnabert2']['hidden_size'],
                                'cross_attention_freq': 2}
-
 
     # https://github.com/MAGICS-LAB/DNABERT_2/blob/main/finetune/train.py
     # https://github.com/MAGICS-LAB/DNABERT_2/blob/main/finetune/scripts/run_dnabert2.sh

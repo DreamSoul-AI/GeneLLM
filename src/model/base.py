@@ -22,7 +22,7 @@ class DataEmbedding(nn.Module):
             nn.init.normal_(self.dataset_embedding.weight, mean=0.0, std=1e-4)  # init embedding vector
         elif self.embedding_mode == 'word' and self.task_name == 'all':
             embedding = []
-            for task_name in self.task_names:
+            for task_name in self.task_names: # TODO: need to check task_idx if align
                 embedding_i = load(os.path.join('data', 'GUE', 'description_embedding', task_name))['pooler_output']
                 embedding.append(embedding_i)
             embedding = torch.cat(embedding, dim=0)
@@ -141,6 +141,9 @@ class LLMBase(nn.Module):
             if self.freeze > 1:
                 for p in gene_encoder.parameters():
                     p.requires_grad = False
+
+
+        # TODO: add token load
         llm_hidden_size = llm.config.hidden_size
         self.gene_proj = nn.Linear(hidden_size, llm_hidden_size)
         self.loss = make_loss
