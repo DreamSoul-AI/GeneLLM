@@ -4,7 +4,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 from module import filter_args, load
 from .loss import make_loss
-from .qformer import QFormer
 
 
 class DataEmbedding(nn.Module):
@@ -17,12 +16,12 @@ class DataEmbedding(nn.Module):
         self.num_datasets = num_datasets
 
         if self.embedding_mode == 'index':
-            self.dataset_embedding = nn.Embedding(num_datasets,
-                                                  hidden_size)  # 给每一个 sebsets 加一个 index embedding。 e.g.EMP_all_index, EMP 里面有10个 subsets, 为每一个 subset 分配一个 embedding vector(size 也是768)
+            # 给每一个 sebsets 加一个 index embedding。 e.g.EMP_all_index, EMP 里面有10个 subsets, 为每一个 subset 分配一个 embedding vector(size 也是768)
+            self.dataset_embedding = nn.Embedding(num_datasets, hidden_size)
             nn.init.normal_(self.dataset_embedding.weight, mean=0.0, std=1e-4)  # init embedding vector
-        elif self.embedding_mode == 'word' and self.task_name == 'all':
+        elif self.embedding_mode == 'word':
             embedding = []
-            for task_name in self.task_names: # TODO: need to check task_idx if align
+            for task_name in self.task_names:
                 embedding_i = load(os.path.join('data', 'GUE', 'description_embedding', task_name))['pooler_output']
                 embedding.append(embedding_i)
             embedding = torch.cat(embedding, dim=0)
@@ -37,7 +36,7 @@ class DataEmbedding(nn.Module):
     def forward(self, dataset_idx, task_idx=None):
         if self.embedding_mode == 'index':
             data_embedding = self.dataset_embedding(dataset_idx)
-        elif self.embedding_mode == 'word' and self.task_name == 'all':
+        elif self.embedding_mode == 'word':
             data_embedding = self.task_embedding(task_idx)
         else:
             data_embedding = 0
@@ -59,7 +58,8 @@ class BertBase(nn.Module):
         self.subset_name = subset_name
         self.freeze = freeze
         if self.freeze == 1:
-            self.freeze(self.model)
+            for p in self.model.parameters():
+                p.requires_grad = False
         self.embedding_mode = embedding_mode
         self.dataset_embedding = DataEmbedding(self.embedding_mode, self.task_name, self.task_names, self.num_datasets,
                                                self.hidden_size)
@@ -67,16 +67,14 @@ class BertBase(nn.Module):
             self.output_proj = nn.Linear(hidden_size, target_size)
         else:
             output_proj = []
+            task_idx_mapping = {}
             for i in range(num_targets):
-                target_size_i = target_size[task_names[i]]
+                target_size_i = target_size[task_name[i]]
+                task_idx_mapping[task_names.index(task_name[i])] = i
                 output_proj.append(nn.Linear(hidden_size, target_size_i))
+            self.task_idx_mapping = task_idx_mapping
             self.output_proj = nn.ModuleList(output_proj)
         self.loss = make_loss  # 定义 loss 的计算图。
-
-    def freeze(self, model):
-        for param in model.parameters():
-            param.requires_grad = False
-        return
 
     def forward(self, **input):
         output = {}
@@ -105,6 +103,7 @@ class BertBase(nn.Module):
             output['loss_task'] = {}
             for i in range(len(unique_task_idx)):
                 task_idx = unique_task_idx[i].item()
+                task_idx = self.task_idx_mapping[task_idx]
                 mask_i = input['task_idx'] == task_idx
                 output_i = self.output_proj[task_idx](decoder_input[mask_i])
                 target_i = input['target'][mask_i]
@@ -142,8 +141,12 @@ class LLMBase(nn.Module):
                 for p in gene_encoder.parameters():
                     p.requires_grad = False
 
+        # TODO: consider batch
+        instruction_token = []
+        for task_name in self.task_names:
+            instruction_token_i = load(os.path.join('data', 'GUE', 'instruction_token', task_name))['input_ids']
+            instruction_token.append(instruction_token_i)
 
-        # TODO: add token load
         llm_hidden_size = llm.config.hidden_size
         self.gene_proj = nn.Linear(hidden_size, llm_hidden_size)
         self.loss = make_loss
@@ -153,7 +156,7 @@ class LLMBase(nn.Module):
         gene_input = filter_args(self.gene_encoder.forward, input)
         if self.freeze > 1:
             with torch.no_grad():
-                encoder_outputs, _ = self.gene_encoder(**gene_input) # [B, L, H]
+                encoder_outputs, _ = self.gene_encoder(**gene_input)  # [B, L, H]
         else:
             encoder_outputs, _ = self.gene_encoder(**gene_input)
         # Step 2: Q-Former attends to gene features

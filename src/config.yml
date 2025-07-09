@@ -2,12 +2,12 @@
 # control
 control:
   data_name: GUE
-  task_name: EMP
-  subset_name: all
+  task_name: EMP~promcore
+  subset_name: H3~notata
 #  model_name: dnabert2
   model_name: Qwen2.5-0.5B-Instruct
   freeze: 0
-  embedding_mode: none  # index
+  embedding_mode: word  # index
 # experiment
 pin_memory: True
 num_workers: 0
