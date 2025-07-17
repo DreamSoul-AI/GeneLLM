@@ -117,13 +117,15 @@ class BertBase(nn.Module):
 
 
 class LLMBase(nn.Module):
-    def __init__(self, gene_encoder, qformer, llm, hidden_size, target_size,
+    def __init__(self, gene_encoder, gene_tokenizer, qformer, llm, llm_tokenizer, hidden_size, target_size,
                  num_datasets, num_targets, task_names, subset_names,
                  task_name, subset_name, freeze, embedding_mode):
         super().__init__()
         self.gene_encoder = gene_encoder
+        self.gene_tokenizer = gene_tokenizer
         self.qformer = qformer
         self.llm = llm
+        self.llm_tokenizer = llm_tokenizer
         self.hidden_size = hidden_size
         self.target_size = target_size
         self.num_datasets = num_datasets
@@ -141,11 +143,18 @@ class LLMBase(nn.Module):
                 for p in gene_encoder.parameters():
                     p.requires_grad = False
 
-        # TODO: consider batch
         instruction_token = []
         for task_name in self.task_names:
-            instruction_token_i = load(os.path.join('data', 'GUE', 'instruction_token', task_name))['input_ids']
-            instruction_token.append(instruction_token_i)
+            instruction_token_i = load(os.path.join('data', 'GUE', 'instruction_token', task_name))
+            instruction_token.append({'input_ids': instruction_token_i})
+        print(instruction_token)
+
+        instruction_token = llm_tokenizer.pad(
+            instruction_token,
+            padding='longest',
+            return_tensors='pt'
+        )
+        self.instruction_token = instruction_token
 
         llm_hidden_size = llm.config.hidden_size
         self.gene_proj = nn.Linear(hidden_size, llm_hidden_size)
@@ -165,7 +174,7 @@ class LLMBase(nn.Module):
         q_output_proj = F.normalize(q_output_proj, dim=-1)
         print(q_output_proj.shape)
         exit()
-
+        # TODO: add instruction token as input for decoder
         # Step 3: LLM (or just average)
         decoder_input_ids = text_tokens.input_ids.clone()
         decoder_input_ids[:, 0] = self.tokenizer.bos_token_id
@@ -189,7 +198,7 @@ class LLMBase(nn.Module):
         return output
 
 
-def base(cfg, gene_encoder, qformer=None, llm=None):
+def base(cfg, gene_encoder, gene_tokenizer, qformer=None, llm=None, llm_tokenizer=None):
     """
     Create a base model (a computation graph) based on the configuration. 这里就是在 core model 的基础上，根据 cfg 的值来决定是否需要添加其他的模块，比如分类头，或者其他的任务相关的模块。
     """
@@ -209,7 +218,7 @@ def base(cfg, gene_encoder, qformer=None, llm=None):
                          subset_name, freeze, embedding_mode)  # 定义 BertBase 这个 model,i.e. a computation graph
     else:
         # https://github.com/salesforce/LAVIS/blob/main/lavis/models/blip2_models/blip2_vicuna_instruct.py
-        model = LLMBase(gene_encoder, qformer, llm, hidden_size, target_size,
+        model = LLMBase(gene_encoder, gene_tokenizer, qformer, llm, llm_tokenizer, hidden_size, target_size,
                         num_datasets, num_targets, task_names, subset_names,
                         task_name, subset_name, freeze, embedding_mode)
     return model

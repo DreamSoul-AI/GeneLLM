@@ -138,7 +138,6 @@ def make_embeddings():
 def make_tokens():
     cfg['model']['model_name'] = 'Qwen2.5-0.5B-Instruct'
     _, tokenizer = make_model_generate(cfg['model'])
-
     base_folder = os.path.join('data', 'GUE', 'instruction_token')
     description_path = os.path.join(".", "dataset", "description")
     instruction = cfg['model']['instruction']['GUE']
@@ -147,7 +146,7 @@ def make_tokens():
         with open(task_file_path, 'r') as f:
             description_i = f.read().replace('\n', '')
         instruction_i = '{} {}'.format(description_i, instruction)
-        input = tokenizer(instruction_i, return_tensors='pt')
+        input = tokenizer(instruction_i, return_tensors='pt')['input_ids'][0].tolist()
         save(input, os.path.join(base_folder, task_name))
     return
 

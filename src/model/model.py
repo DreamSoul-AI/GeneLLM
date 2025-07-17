@@ -19,9 +19,7 @@ def make_model(cfg):
         gene_encoder, gene_tokenizer = model.dnabert2(cfg)
         qformer = model.qformer(cfg)
         llm, llm_tokenizer = model.make_model_generate(cfg)
-        base = model.base(cfg, gene_encoder, qformer=qformer, llm=llm)
-        base.gene_tokenizer = gene_tokenizer
-        base.llm_tokenizer = llm_tokenizer
+        base = model.base(cfg, gene_encoder, gene_tokenizer, qformer=qformer, llm=llm, llm_tokenizer=llm_tokenizer)
     return base
 
 
