@@ -98,13 +98,13 @@ class BertBase(nn.Module):
             output['loss'] = self.loss(output['pred'], input['target'])
         else:
             loss = 0
-            unique_task_idx = torch.unique(input['task_idx'])
             output['pred'] = {}
             output['loss_task'] = {}
+            unique_task_idx = torch.unique(input['task_idx'])
             for i in range(len(unique_task_idx)):
                 task_idx = unique_task_idx[i].item()
-                task_idx = self.task_idx_mapping[task_idx]
                 mask_i = input['task_idx'] == task_idx
+                task_idx = self.task_idx_mapping[task_idx] # revised order
                 output_i = self.output_proj[task_idx](decoder_input[mask_i])
                 target_i = input['target'][mask_i]
                 output['pred'][task_idx] = output_i
@@ -147,17 +147,24 @@ class LLMBase(nn.Module):
         for task_name in self.task_names:
             instruction_token_i = load(os.path.join('data', 'GUE', 'instruction_token', task_name))
             instruction_token.append({'input_ids': instruction_token_i})
-        print(instruction_token)
 
         instruction_token = llm_tokenizer.pad(
             instruction_token,
             padding='longest',
             return_tensors='pt'
         )
-        self.instruction_token = instruction_token
+        self.register_buffer('instruction_token_input_ids', instruction_token['input_ids'])
+        self.register_buffer('instruction_token_attention_mask', instruction_token['attention_mask'])
 
         llm_hidden_size = llm.config.hidden_size
         self.gene_proj = nn.Linear(hidden_size, llm_hidden_size)
+
+        if num_targets > 1:
+            task_idx_mapping = {}
+            for i in range(num_targets):
+                task_idx_mapping[task_names.index(task_name[i])] = i
+            self.task_idx_mapping = task_idx_mapping
+
         self.loss = make_loss
 
     def forward(self, **input):
@@ -173,23 +180,35 @@ class LLMBase(nn.Module):
         q_output_proj = self.gene_proj(q_output)  # [B, Q, H_lm]
         q_output_proj = F.normalize(q_output_proj, dim=-1)
         print(q_output_proj.shape)
+        print(self.instruction_token_input_ids.size())
+        print(self.instruction_token_attention_mask.size())
         exit()
-        # TODO: add instruction token as input for decoder
-        # Step 3: LLM (or just average)
-        decoder_input_ids = text_tokens.input_ids.clone()
-        decoder_input_ids[:, 0] = self.tokenizer.bos_token_id
-        labels = decoder_input_ids.masked_fill(
-            decoder_input_ids == self.tokenizer.pad_token_id, -100
-        )
 
-        query_atts = torch.ones(query_tokens.size()[:-1], dtype=torch.long).to(
-            image.device
-        )
-        attention_mask = torch.cat([query_atts, text_tokens.attention_mask], dim=1)
+        batch_task_idx = task_idx.new_zeros(
+            (len(input['task_idx']), self.instruction_token_input_ids.size(-1)))
+        unique_task_idx = torch.unique(input['task_idx'])
+        for i in range(len(unique_task_idx)):
+            task_idx = unique_task_idx[i].item()
+            mask_i = input['task_idx'] == task_idx
+            task_idx = self.task_idx_mapping[task_idx]
+            batch_task_idx[mask_i] = task_idx
+        input_ids = self.instruction_token_input_ids[batch_task_idx]
+        attention_mask = self.instruction_token_attention_mask[batch_task_idx]
+
+        # TODO: add instruction token as input for decoder, needs to check original implementation
+        # Step 3: LLM (or just average)
+        # decoder_input_ids = text_tokens.input_ids.clone()
+        # decoder_input_ids[:, 0] = self.tokenizer.bos_token_id
+        # labels = decoder_input_ids.masked_fill(
+        #     decoder_input_ids == self.tokenizer.pad_token_id, -100
+        # )
+
+        query_atts = torch.ones(query_tokens.size()[:-1], dtype=torch.long).to(image.device)
+        attention_mask = torch.cat([self.instruction_token_attention_mask, text_tokens.attention_mask], dim=1)
         lm_output = self.Qformer(
             decoder_input_ids,
             attention_mask=attention_mask,
-            past_key_values=query_output.past_key_values,
+            past_key_values=q_output_proj,  # TODO: this needs verification
             return_dict=True,
             labels=labels,
         )

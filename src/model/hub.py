@@ -34,7 +34,7 @@ def make_model_generate(cfg):
             ms_snapshot_download(repo_id=model_name, local_files_only=False, local_dir=snapshot_path)
         else:
             raise ValueError('Not valid model source')
-    tokenizer = AutoTokenizer.from_pretrained(snapshot_path)
+    tokenizer = AutoTokenizer.from_pretrained(snapshot_path, padding_side="left")
     tokenizer.pad_token = tokenizer.eos_token
     model = AutoModelForCausalLM.from_pretrained(pretrained_model_name_or_path=snapshot_path)
     return model, tokenizer
