@@ -4,6 +4,8 @@ control:
   data_name: GUE
   task_name: EMP~promcore
   subset_name: H3~notata
+#  task_name: EMP
+#  subset_name: all
 #  model_name: dnabert2
   model_name: Qwen2.5-0.5B-Instruct
   freeze: 0

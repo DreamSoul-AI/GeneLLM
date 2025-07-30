@@ -13,8 +13,7 @@ def make_model(cfg):
 
     if cfg['model_name'] == 'dnabert2':
         gene_encoder, gene_tokenizer = model.dnabert2(cfg)
-        base = model.base(cfg, gene_encoder)
-        base.gene_tokenizer = gene_tokenizer
+        base = model.base(cfg, gene_encoder, gene_tokenizer)
     else:
         gene_encoder, gene_tokenizer = model.dnabert2(cfg)
         qformer = model.qformer(cfg)

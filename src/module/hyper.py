@@ -85,7 +85,7 @@ def process_control():
     cfg['model']['dnabert2'] = {'hidden_size': 768}
     cfg['model']['padding_side'] = 'right'
     cfg['model']['instruction'] = {
-        'GUE': 'Based on the following DNA sequence, what is your prediction? (True/False)'}
+        'GUE': 'Based on the following DNA sequence, what is your prediction? Answer(True/False): '}
 
     # https://github.com/MAGICS-LAB/DNABERT_2/blob/main/finetune/scripts/run_dnabert2.sh
     task_max_length = {'EMP': 128, 'mouse': 30, 'promcore': 20, 'prom300': 70, 'splice': 80, 'tf': 30, 'virus': 256}

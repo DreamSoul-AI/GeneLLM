@@ -5,7 +5,7 @@ import torch
 from torch.utils.data import DataLoader
 from torch.utils.data.dataloader import default_collate
 from dataset.utils import Compose
-from module import apply_recursively
+from module import apply_recursively, load
 from config import cfg
 
 
@@ -219,23 +219,6 @@ def process_dataset(dataset, merge_test=True):
 
 
 def update_dataset(dataset, tokenizer=None):
-    def tokenize_transform(tokenizer, max_length):
-        def transform(input):
-            tokenized = tokenizer(
-                input['data'],
-                return_tensors="pt",
-                padding="max_length",
-                max_length=max_length,
-                truncation=True,
-            )
-            tokenized['input_ids'] = tokenized['input_ids'].squeeze(0)
-            tokenized['attention_mask'] = tokenized['attention_mask'].squeeze(0)
-            del tokenized['token_type_ids']
-            input = {**input, **tokenized}  # 将 tokenized 的结果合并到原来的 input 中
-            return input
-
-        return transform
-
     def dataset_index_transform(input):
         if cfg['task_name'] == 'all':
             # 给每一个 (task, subtask) e.g. (EMP, xxx) 一个数字 id。
@@ -250,40 +233,80 @@ def update_dataset(dataset, tokenizer=None):
                 input['dataset_idx'] = torch.tensor(0)
         return input
 
-    processed_dataset = dataset
+    def tokenize_transform(tokenizer, max_length):
+        def transform(input):
+            tokenized = tokenizer(
+                input['data'],
+                return_tensors="pt",
+                padding="max_length",
+                max_length=max_length,
+                truncation=True,
+            )
+            tokenized['input_ids'] = tokenized['input_ids'].squeeze(0)
+            tokenized['attention_mask'] = tokenized['attention_mask'].squeeze(0)
+            del tokenized['token_type_ids']
+            # 将 tokenized 的结果合并到原来的 input 中
+            input = {**input, **tokenized}
+            return input
 
-    # if isinstance(processed_dataset['train'], list):
-    #     if tokenizer is not None:
-    #         # processed_dataset = {'train': [dataset1, dataset2, ...], 'valid': [dataset1, dataset2, ...], 'test': [dataset1, dataset2, ...]}
-    #         for k in processed_dataset:
-    #             for i in range(len(processed_dataset[k])):
-    #                 # processed_dataset[k][i] is a dataset object. 这里是 set 每一个 dataset 的 transform
-    #                 processed_dataset[k][i].transform = Compose([
-    #                     dataset_index_transform,
-    #                     tokenize_transform(tokenizer, cfg['model']['max_length'])])
-    #     # 把多个训练子数据集（dataset 对象）合并成一个大的训练数据集。processed_dataset['train']本来是 a list of dataset。concat 后就变成一个
-    #     # processed_dataset['train'] = torch.utils.data.ConcatDataset(processed_dataset['train'])
-    # else:
-    #     if tokenizer is not None:
-    #         for k in processed_dataset:
-    #             print(k)
-    #             processed_dataset[k].transform = Compose([
-    #                 dataset_index_transform,
-    #                 tokenize_transform(tokenizer, cfg['model']['max_length'])])
+        return transform
+
+    def instruction_transform(tokenizer):
+        def transform(input):
+            target = input['target'].item()
+            instruction_token_input_ids = instruction_token['input_ids'][input['task_idx']]
+            target_token_input_ids = target_token_map[target]['input_ids']
+            instruction_token_attention_mask = instruction_token['attention_mask'][input['task_idx']]
+            target_token_input_ids_attention_mask = target_token_map[target]['attention_mask']
+            instruction_token_input_ids = torch.cat([instruction_token_input_ids, target_token_input_ids])
+            instruction_token_attention_mask = torch.cat([instruction_token_attention_mask,
+                                                          target_token_input_ids_attention_mask])
+            # decoded_instruction = tokenizer.decode(
+            #     instruction_token_input_ids, skip_special_tokens=True
+            # )
+            # print("Decoded Instruction:", decoded_instruction)
+            # print("Target:", input['target'])
+            # print(instruction_token_attention_mask)
+            input['text_input_ids'] = instruction_token_input_ids
+            input['text_attention_mask'] = instruction_token_attention_mask
+            return input
+
+        if cfg['data_name'] == 'GUE':
+            instruction_token = []
+            for task_name in cfg['model']['task_names']:
+                instruction_token_i = load(os.path.join('data', 'GUE', 'instruction_token', task_name))
+                instruction_token.append({'input_ids': instruction_token_i})
+
+            instruction_token = tokenizer.pad(instruction_token, padding='longest',
+                                              return_tensors='pt')
+            target_token_map = {}
+            for target in [0, 1]:
+                str_target = str(bool(target))
+                encoded = tokenizer(str_target, return_tensors='pt')['input_ids'].squeeze(0)
+                target_token_map[target] = {'input_ids': encoded,
+                                            'attention_mask': torch.zeros(len(encoded), dtype=torch.long)}
+        else:
+            raise ValueError('Not valid data name')
+        return transform
+
+    processed_dataset = dataset
+    transform = [dataset_index_transform]
     if tokenizer is not None:
-        for k in processed_dataset:
-            if isinstance(processed_dataset[k], list):
-                for i in range(len(processed_dataset[k])):
-                    processed_dataset[k][i].transform = Compose([
-                        dataset_index_transform,
-                        tokenize_transform(tokenizer, cfg['model']['max_length'])])
-            elif isinstance(processed_dataset[k], torch.utils.data.ConcatDataset):
-                for i in range(len(processed_dataset[k].datasets)):
-                    processed_dataset[k].datasets[i].transform = Compose([
-                        dataset_index_transform,
-                        tokenize_transform(tokenizer, cfg['model']['max_length'])])
-            else:
-                processed_dataset[k].transform = Compose([
-                    dataset_index_transform,
-                    tokenize_transform(tokenizer, cfg['model']['max_length'])])
+        gene_tokenizer = tokenizer.get('gene', None)
+        llm_tokenizer = tokenizer.get('llm', None)
+        if gene_tokenizer is not None:
+            transform.extend([tokenize_transform(gene_tokenizer, cfg['model']['max_length'])])
+        if llm_tokenizer is not None:
+            transform.extend([instruction_transform(llm_tokenizer)])
+    transform = Compose(transform)
+
+    for k in processed_dataset:
+        if isinstance(processed_dataset[k], list):
+            for i in range(len(processed_dataset[k])):
+                processed_dataset[k][i].transform = transform
+        elif isinstance(processed_dataset[k], torch.utils.data.ConcatDataset):
+            for i in range(len(processed_dataset[k].datasets)):
+                processed_dataset[k].datasets[i].transform = transform
+        else:
+            processed_dataset[k].transform = transform
     return processed_dataset

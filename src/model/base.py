@@ -44,10 +44,12 @@ class DataEmbedding(nn.Module):
 
 
 class BertBase(nn.Module):
-    def __init__(self, model, hidden_size, target_size, num_datasets, num_targets, task_names, subset_names, task_name,
-                 subset_name, freeze, embedding_mode):  # 这里的 model 就是 core model, 就是 DNABert2 用的那个 BERT。
+    # 这里的 model 就是 core model, 就是 DNABert2 用的那个 BERT。
+    def __init__(self, model, gene_tokenizer, hidden_size, target_size, num_datasets, num_targets, task_names,
+                 subset_names, task_name, subset_name, freeze, embedding_mode):
         super().__init__()
         self.model = model
+        self.tokenizer = {'gene': gene_tokenizer}
         self.hidden_size = hidden_size
         self.target_size = target_size
         self.num_datasets = num_datasets
@@ -69,8 +71,8 @@ class BertBase(nn.Module):
             output_proj = []
             task_idx_mapping = {}
             for i in range(num_targets):
-                target_size_i = target_size[task_name[i]]
-                task_idx_mapping[task_names.index(task_name[i])] = i
+                target_size_i = target_size[self.task_name[i]]
+                task_idx_mapping[self.task_names.index(self.task_name[i])] = i
                 output_proj.append(nn.Linear(hidden_size, target_size_i))
             self.task_idx_mapping = task_idx_mapping
             self.output_proj = nn.ModuleList(output_proj)
@@ -122,10 +124,9 @@ class LLMBase(nn.Module):
                  task_name, subset_name, freeze, embedding_mode):
         super().__init__()
         self.gene_encoder = gene_encoder
-        self.gene_tokenizer = gene_tokenizer
         self.qformer = qformer
         self.llm = llm
-        self.llm_tokenizer = llm_tokenizer
+        self.tokenizer = {'gene': gene_tokenizer, 'llm': llm_tokenizer}
         self.hidden_size = hidden_size
         self.target_size = target_size
         self.num_datasets = num_datasets
@@ -143,18 +144,19 @@ class LLMBase(nn.Module):
                 for p in gene_encoder.parameters():
                     p.requires_grad = False
 
-        instruction_token = []
-        for task_name in self.task_names:
-            instruction_token_i = load(os.path.join('data', 'GUE', 'instruction_token', task_name))
-            instruction_token.append({'input_ids': instruction_token_i})
-
-        instruction_token = llm_tokenizer.pad(
-            instruction_token,
-            padding='longest',
-            return_tensors='pt'
-        )
-        self.register_buffer('instruction_token_input_ids', instruction_token['input_ids'])
-        self.register_buffer('instruction_token_attention_mask', instruction_token['attention_mask'])
+        # TODO: change to data transform
+        # instruction_token = []
+        # for task_name in self.task_names:
+        #     instruction_token_i = load(os.path.join('data', 'GUE', 'instruction_token', task_name))
+        #     instruction_token.append({'input_ids': instruction_token_i})
+        #
+        # instruction_token = llm_tokenizer.pad(
+        #     instruction_token,
+        #     padding='longest',
+        #     return_tensors='pt'
+        # )
+        # self.register_buffer('instruction_token_input_ids', instruction_token['input_ids'])
+        # self.register_buffer('instruction_token_attention_mask', instruction_token['attention_mask'])
 
         llm_hidden_size = llm.config.hidden_size
         self.gene_proj = nn.Linear(hidden_size, llm_hidden_size)
@@ -162,14 +164,18 @@ class LLMBase(nn.Module):
         if num_targets > 1:
             task_idx_mapping = {}
             for i in range(num_targets):
-                task_idx_mapping[task_names.index(task_name[i])] = i
+                task_idx_mapping[self.task_names.index(self.task_name[i])] = i
             self.task_idx_mapping = task_idx_mapping
 
         self.loss = make_loss
 
     def forward(self, **input):
+        print(input.keys())
         # Step 1: Encode gene sequence
         gene_input = filter_args(self.gene_encoder.forward, input)
+        print(gene_input.keys())
+        exit()
+
         if self.freeze > 1:
             with torch.no_grad():
                 encoder_outputs, _ = self.gene_encoder(**gene_input)  # [B, L, H]
@@ -180,8 +186,7 @@ class LLMBase(nn.Module):
         q_output_proj = self.gene_proj(q_output)  # [B, Q, H_lm]
         q_output_proj = F.normalize(q_output_proj, dim=-1)
         print(q_output_proj.shape)
-        print(self.instruction_token_input_ids.size())
-        print(self.instruction_token_attention_mask.size())
+        print(input.keys())
         exit()
 
         batch_task_idx = task_idx.new_zeros(
@@ -194,6 +199,9 @@ class LLMBase(nn.Module):
             batch_task_idx[mask_i] = task_idx
         input_ids = self.instruction_token_input_ids[batch_task_idx]
         attention_mask = self.instruction_token_attention_mask[batch_task_idx]
+
+        exit()
+
 
         # TODO: add instruction token as input for decoder, needs to check original implementation
         # Step 3: LLM (or just average)
@@ -232,9 +240,9 @@ def base(cfg, gene_encoder, gene_tokenizer, qformer=None, llm=None, llm_tokenize
     freeze = cfg['freeze']
     embedding_mode = cfg['embedding_mode']
     if cfg['model_name'] in ['dnabert2']:
-        model = BertBase(gene_encoder, hidden_size, target_size, num_datasets, num_targets, task_names, subset_names,
-                         task_name,
-                         subset_name, freeze, embedding_mode)  # 定义 BertBase 这个 model,i.e. a computation graph
+        # 定义 BertBase 这个 model,i.e. a computation graph
+        model = BertBase(gene_encoder, gene_tokenizer, hidden_size, target_size, num_datasets, num_targets, task_names,
+                         subset_names,  task_name,  subset_name, freeze, embedding_mode)
     else:
         # https://github.com/salesforce/LAVIS/blob/main/lavis/models/blip2_models/blip2_vicuna_instruct.py
         model = LLMBase(gene_encoder, gene_tokenizer, qformer, llm, llm_tokenizer, hidden_size, target_size,
