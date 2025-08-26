@@ -186,7 +186,7 @@ def process_dataset(dataset, merge_test=True):
         cfg['num_samples'] = {}
         for k in processed_dataset:
             if k == 'train' or merge_test:
-                processed_dataset[k] = torch.utils.data.ConcatDataset(processed_dataset[k])
+                processed_dataset[k] = torch.utils.data.ConcatDataset(processed_dataset[k]) # combine a list of Datasets into a single Dataset.
                 processed_dataset[k].data_size = data_size
                 processed_dataset[k].target_size = target_size
                 cfg['num_samples'][k] = len(processed_dataset[k])
@@ -219,6 +219,9 @@ def process_dataset(dataset, merge_test=True):
 
 
 def update_dataset(dataset, tokenizer=None):
+    """
+    定义一堆 data preprocessing 的 transforms, 然后根据情况，给 dataset 加上不同的 transforms。
+    """
     def dataset_index_transform(input):
         if cfg['task_name'] == 'all':
             # 给每一个 (task, subtask) e.g. (EMP, xxx) 一个数字 id。
@@ -298,7 +301,7 @@ def update_dataset(dataset, tokenizer=None):
             transform.extend([tokenize_transform(gene_tokenizer, cfg['model']['max_length'])])
         if llm_tokenizer is not None:
             transform.extend([instruction_transform(llm_tokenizer)])
-    transform = Compose(transform)
+    transform = Compose(transform) # Compose 就是 apply a list of transforms sequentially
 
     for k in processed_dataset:
         if isinstance(processed_dataset[k], list):

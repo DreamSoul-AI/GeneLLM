@@ -44,7 +44,11 @@ class DataEmbedding(nn.Module):
 
 
 class BertBase(nn.Module):
-    # 这里的 model 就是 core model, 就是 DNABert2 用的那个 BERT。
+    """
+    这个 BertBase 其实就是在 DNABert2 这个模型的基础上，加了一个或者多个分类头，和 dataset embedding。
+    所以，可以看出来一些如何在已有模型上去继续构建更大模型的做法，就是这样，用一个 nn.Module 去包裹已有的模型，然后在 forward 里面调用已有模型的 forward 方法，得到输出后，再接上其他的模块，形成一个新的计算图。
+    """
+
     def __init__(self, model, gene_tokenizer, hidden_size, target_size, num_datasets, num_targets, task_names,
                  subset_names, task_name, subset_name, freeze, embedding_mode):
         super().__init__()

@@ -6,6 +6,9 @@ from transformers import AutoModel, AutoModelForSequenceClassification, AutoConf
 
 
 def dnabert2(cfg):
+    """
+    load basic dnabert2 model and tokenizer
+    """
     model_name_or_path = 'zhihan1996/DNABERT-2-117M'
     cache_dir = os.path.join('output', 'cache')
     cache_config_path = os.path.join(cache_dir, 'dnabert2', 'config')

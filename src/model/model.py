@@ -12,8 +12,8 @@ def make_model(cfg):
     i.e. 先 build core model, 然后再根据 cfg 的值来决定是否需要添加其他的模块，比如分类头，或者其他的任务相关的模块。"""
 
     if cfg['model_name'] == 'dnabert2':
-        gene_encoder, gene_tokenizer = model.dnabert2(cfg)
-        base = model.base(cfg, gene_encoder, gene_tokenizer)
+        gene_encoder, gene_tokenizer = model.dnabert2(cfg) # load basic dnabert2 model and tokenizer
+        base = model.base(cfg, gene_encoder, gene_tokenizer)  # 在 dnabert2 的基础上，继续 build base model, 这个 base model 好像就是最终我们去训练的 model 
     else:
         gene_encoder, gene_tokenizer = model.dnabert2(cfg)
         qformer = model.qformer(cfg)

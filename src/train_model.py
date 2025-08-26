@@ -69,7 +69,7 @@ def runExperiment():
                                    cfg['step'], cfg['step_period'], cfg['pin_memory'], cfg['num_workers'],
                                    cfg['collate_mode'], cfg['seed'])
     data_iterator = enumerate(data_loader['train'])
-    while cfg['step'] < cfg['num_steps']:
+    while cfg['step'] < cfg['num_steps']: # recall,'num_steps' is the number of weight updates
         train(data_iterator, model, optimizer, scheduler, logger)  # train one epoch
         test('valid', data_loader['valid'], model, logger)
         test('test', data_loader['test'], model, logger)
