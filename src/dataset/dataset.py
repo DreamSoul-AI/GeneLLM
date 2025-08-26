@@ -311,5 +311,6 @@ def update_dataset(dataset, tokenizer=None):
             for i in range(len(processed_dataset[k].datasets)):
                 processed_dataset[k].datasets[i].transform = transform
         else:
-            processed_dataset[k].transform = transform
+            processed_dataset[k].transform = transform   # apply transform (mainly tokenizer) to dataset
+                                                         # 这里其实是在 gue dataset 的 __getitem__ 里调用 transform, 属于 lazy computation 了
     return processed_dataset

@@ -47,7 +47,7 @@ class GUE(Dataset):
                  'subset_idx': subset_idx}
         other = {k: torch.tensor(self.other[k][index]) for k in self.other}
         input = {**input, **other}
-        if self.transform is not None:
+        if self.transform is not None:    # 是在 __getitem__ 里调用 transform
             input = self.transform(input)
         return input
 
