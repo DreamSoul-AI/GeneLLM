@@ -86,7 +86,8 @@ class BertBase(nn.Module):
         output = {}
         # https://github.com/mosaicml/examples/blob/main/examples/benchmarks/bert/src/bert_layers.py
         # 用 filter_args 函数筛选 input 字典，只保留 self.model.forward 方法所需要的参数。
-        valid_input = filter_args(self.model.forward, input)
+        # 注意，这里是 self.model.forward 这个函数，而不是 self.forward!
+        valid_input = filter_args(self.model.forward, input) 
         if self.freeze:
             with torch.no_grad():
                 encoder_outputs, pooled_output = self.model(**valid_input)

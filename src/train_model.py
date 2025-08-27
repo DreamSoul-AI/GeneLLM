@@ -91,8 +91,8 @@ def train(data_loader, model, optimizer, scheduler, logger):
             # print(i)
             if i % cfg['step_period'] == 0 and cfg['profile']:
                 logger.profiler.step()
-            input_size = len(input[list(input.keys())[0]])
-            input = to_device(input, cfg['device'])
+            input_size = len(input[list(input.keys())[0]]) # batch size
+            input = to_device(input, cfg['device']) 
             output = model(**input)
             loss = 1 / cfg['step_period'] * output['loss']
             loss.backward()
