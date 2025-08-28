@@ -75,8 +75,9 @@ class BertBase(nn.Module):
             output_proj = []
             task_idx_mapping = {}
             for i in range(num_targets):
-                target_size_i = target_size[self.task_name[i]]
-                task_idx_mapping[self.task_names.index(self.task_name[i])] = i
+                target_size_i = target_size[self.task_names[i]]
+                # task_idx_mapping[self.task_names.index(self.task_name[i])] = i
+                task_idx_mapping[self.task_names.index(self.task_names[i])] = i  # Q: how this task_idx_mapping is used?
                 output_proj.append(nn.Linear(hidden_size, target_size_i))
             self.task_idx_mapping = task_idx_mapping
             self.output_proj = nn.ModuleList(output_proj)
@@ -237,7 +238,7 @@ def base(cfg, gene_encoder, gene_tokenizer, qformer=None, llm=None, llm_tokenize
     hidden_size = cfg['dnabert2']['hidden_size']
     target_size = cfg['target_size']
     num_datasets = cfg['num_datasets']
-    num_targets = cfg['num_targets']
+    num_targets = cfg['num_targets'] # 这里指的是 task 的个数
     task_names = cfg['task_names']
     subset_names = cfg['subset_names']
     task_name = cfg['task_name']
