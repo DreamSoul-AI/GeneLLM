@@ -92,7 +92,7 @@ def train(data_loader, model, optimizer, scheduler, logger):
             if i % cfg['step_period'] == 0 and cfg['profile']:
                 logger.profiler.step()
             input_size = len(input[list(input.keys())[0]]) # batch size
-            input = to_device(input, cfg['device']) 
+            input = to_device(input, cfg['device']) # 当 task = all 的时候，input_ids 和 attention_mask 都被 padding 到最长的 seq length, which is 256
             output = model(**input)
             loss = 1 / cfg['step_period'] * output['loss']
             loss.backward()

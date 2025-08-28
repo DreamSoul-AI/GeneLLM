@@ -101,7 +101,7 @@ class BertBase(nn.Module):
             dataset_embedding = self.dataset_embedding(input['dataset_idx'], input['task_idx'])
             decoder_input = decoder_input + dataset_embedding  # 这里的 + 是 element-wise add
 
-        if self.num_targets == 1:
+        if self.num_targets == 1:  # 这里指的是 task 的个数
             output['pred'] = self.output_proj(decoder_input)
             output['loss'] = self.loss(output['pred'], input['target'])
         else:
@@ -111,7 +111,7 @@ class BertBase(nn.Module):
             unique_task_idx = torch.unique(input['task_idx'])
             for i in range(len(unique_task_idx)):
                 task_idx = unique_task_idx[i].item()
-                mask_i = input['task_idx'] == task_idx
+                mask_i = input['task_idx'] == task_idx # 把属于 task_idx 这个 task 的那些样本都找出来
                 task_idx = self.task_idx_mapping[task_idx] # revised order
                 output_i = self.output_proj[task_idx](decoder_input[mask_i])
                 target_i = input['target'][mask_i]
