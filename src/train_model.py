@@ -42,9 +42,9 @@ def runExperiment():
     cfg['best_path'] = os.path.join(cfg['tag_path'], 'best')
     cfg['logger_path'] = os.path.join('output', 'logger', 'train', 'runs', cfg['tag'])
     dataset = make_dataset(cfg['data_name'], task_name=cfg['task_name'], subset_name=cfg['subset_name'])
-    dataset = process_dataset(dataset)
+    dataset = process_dataset(dataset) # update cfg based on dataset
     model = make_model(cfg['model'])
-    dataset = update_dataset(dataset, model.tokenizer)
+    dataset = update_dataset(dataset, model.tokenizer)  # tokenize_transform, dataset_index_transform
     result = resume(cfg['checkpoint_path'], resume_mode=cfg['resume_mode'])
     if result is None:  # train from scratch
         cfg['step'] = 0

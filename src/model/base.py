@@ -17,7 +17,7 @@ class DataEmbedding(nn.Module):
 
         if self.embedding_mode == 'index':
             # 给每一个 sebsets 加一个 index embedding。 e.g.EMP_all_index, EMP 里面有10个 subsets, 为每一个 subset 分配一个 embedding vector(size 也是768)
-            self.dataset_embedding = nn.Embedding(num_datasets, hidden_size)
+            self.dataset_embedding = nn.Embedding(num_datasets, hidden_size) # 这里其实就是给每一个 datasets 一个 embedding 表示 
             nn.init.normal_(self.dataset_embedding.weight, mean=0.0, std=1e-4)  # init embedding vector
         elif self.embedding_mode == 'word':
             embedding = []

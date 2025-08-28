@@ -63,9 +63,9 @@ def make_dataset(data_name, verbose=True, **kwargs):
                         dataset_['test'].append(dataset_test)
             else:
                 raise ValueError('Not valid subset name')
-        else:  # for the case e.g. EMP_all_index
+        else:  # for the case of a single task e.g. EMP_all_index
             dataset_ = {'train': [], 'valid': [], 'test': []}
-            if subset_name == 'all':
+            if subset_name == 'all': # all subsets
                 dataset_ = {'train': [], 'valid': [], 'test': []}
                 subset_names = cfg['subset_names'][task_name]
                 for subset_name_i in subset_names:
@@ -78,7 +78,7 @@ def make_dataset(data_name, verbose=True, **kwargs):
                     dataset_['train'].append(dataset_train)
                     dataset_['valid'].append(dataset_valid)
                     dataset_['test'].append(dataset_test)
-            elif isinstance(subset_name, list):
+            elif isinstance(subset_name, list): # a list of subset
                 dataset_ = {'train': [], 'valid': [], 'test': []}
                 subset_names = cfg['subset_name']
                 for subset_name_i in subset_names:
@@ -91,7 +91,7 @@ def make_dataset(data_name, verbose=True, **kwargs):
                     dataset_['train'].append(dataset_train)
                     dataset_['valid'].append(dataset_valid)
                     dataset_['test'].append(dataset_test)
-            else:
+            else:  # single subset
                 dataset_ = {}
                 dataset_['train'] = dataset.GUE(root=root, task_name=task_name, subset_name=subset_name,
                                                 split='train')
@@ -185,10 +185,10 @@ def process_dataset(dataset, merge_test=True):
                         target_size[processed_dataset[k][i].task_name] = processed_dataset[k][i].target_size
         cfg['num_samples'] = {}
         for k in processed_dataset:
-            if k == 'train' or merge_test:
+            if k == 'train' or merge_test: # merge_test 就是把各个 subset 的 valid 和 test 数据集合并成一个大的 valid 和  test数据集
                 processed_dataset[k] = torch.utils.data.ConcatDataset(processed_dataset[k]) # combine a list of Datasets into a single Dataset.
-                processed_dataset[k].data_size = data_size
-                processed_dataset[k].target_size = target_size
+                processed_dataset[k].data_size = data_size  # max token seq length for this dataset
+                processed_dataset[k].target_size = target_size # number of classes
                 cfg['num_samples'][k] = len(processed_dataset[k])
             else:
                 cfg['num_samples'][k] = []
@@ -205,7 +205,7 @@ def process_dataset(dataset, merge_test=True):
 
     # 有些配置参数需要根据数据集的大小来调整，比如 batch size 和 num_steps。
     if 'num_epochs' in cfg and cfg['num_epochs'] is not None:
-        if cfg['batch_size'] > len(processed_dataset['train']):
+        if cfg['batch_size'] > len(processed_dataset['train']):  # 处理一些 corner case
             cfg['batch_size'] = len(processed_dataset['train'])
             cfg[cfg['tag']]['optimizer']['batch_size'] = {'train': cfg['batch_size'],
                                                           'test': cfg[cfg['tag']]['optimizer']['test_batch_ratio'] *
