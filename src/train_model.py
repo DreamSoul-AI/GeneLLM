@@ -42,9 +42,9 @@ def runExperiment():
     cfg['best_path'] = os.path.join(cfg['tag_path'], 'best')
     cfg['logger_path'] = os.path.join('output', 'logger', 'train', 'runs', cfg['tag'])
     dataset = make_dataset(cfg['data_name'], task_name=cfg['task_name'], subset_name=cfg['subset_name'])
-    dataset = process_dataset(dataset)
+    dataset = process_dataset(dataset) # update cfg based on dataset
     model = make_model(cfg['model'])
-    dataset = update_dataset(dataset, model.tokenizer)
+    dataset = update_dataset(dataset, model.tokenizer)  # tokenize_transform, dataset_index_transform
     result = resume(cfg['checkpoint_path'], resume_mode=cfg['resume_mode'])
     if result is None:  # train from scratch
         cfg['step'] = 0
@@ -91,8 +91,8 @@ def train(data_loader, model, optimizer, scheduler, logger):
             # print(i)
             if i % cfg['step_period'] == 0 and cfg['profile']:
                 logger.profiler.step()
-            input_size = len(input[list(input.keys())[0]])
-            input = to_device(input, cfg['device'])
+            input_size = len(input[list(input.keys())[0]]) # batch size
+            input = to_device(input, cfg['device']) # 当 task = all 的时候，input_ids 和 attention_mask 都被 padding 到最长的 seq length, which is 256
             output = model(**input)
             loss = 1 / cfg['step_period'] * output['loss']
             loss.backward()

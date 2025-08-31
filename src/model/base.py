@@ -17,7 +17,7 @@ class DataEmbedding(nn.Module):
 
         if self.embedding_mode == 'index':
             # 给每一个 sebsets 加一个 index embedding。 e.g.EMP_all_index, EMP 里面有10个 subsets, 为每一个 subset 分配一个 embedding vector(size 也是768)
-            self.dataset_embedding = nn.Embedding(num_datasets, hidden_size)
+            self.dataset_embedding = nn.Embedding(num_datasets, hidden_size) # 这里其实就是给每一个 datasets 一个 embedding 表示 
             nn.init.normal_(self.dataset_embedding.weight, mean=0.0, std=1e-4)  # init embedding vector
         elif self.embedding_mode == 'word':
             embedding = []
@@ -75,18 +75,20 @@ class BertBase(nn.Module):
             output_proj = []
             task_idx_mapping = {}
             for i in range(num_targets):
-                target_size_i = target_size[self.task_name[i]]
-                task_idx_mapping[self.task_names.index(self.task_name[i])] = i
+                target_size_i = target_size[self.task_names[i]]
+                # task_idx_mapping[self.task_names.index(self.task_name[i])] = i
+                task_idx_mapping[self.task_names.index(self.task_names[i])] = i  # Q: how this task_idx_mapping is used?
                 output_proj.append(nn.Linear(hidden_size, target_size_i))
             self.task_idx_mapping = task_idx_mapping
-            self.output_proj = nn.ModuleList(output_proj)
+            self.output_proj = nn.ModuleList(output_proj) # nn.ModuleList 确保所有参数都 registered, 这样 optimizer 才会对参数更新
         self.loss = make_loss  # 定义 loss 的计算图。
 
     def forward(self, **input):
         output = {}
         # https://github.com/mosaicml/examples/blob/main/examples/benchmarks/bert/src/bert_layers.py
         # 用 filter_args 函数筛选 input 字典，只保留 self.model.forward 方法所需要的参数。
-        valid_input = filter_args(self.model.forward, input)
+        # 注意，这里是 self.model.forward 这个函数，而不是 self.forward!
+        valid_input = filter_args(self.model.forward, input) 
         if self.freeze:
             with torch.no_grad():
                 encoder_outputs, pooled_output = self.model(**valid_input)
@@ -99,25 +101,25 @@ class BertBase(nn.Module):
             dataset_embedding = self.dataset_embedding(input['dataset_idx'], input['task_idx'])
             decoder_input = decoder_input + dataset_embedding  # 这里的 + 是 element-wise add
 
-        if self.num_targets == 1:
+        if self.num_targets == 1:  # 这里指的是 task 的个数
             output['pred'] = self.output_proj(decoder_input)
             output['loss'] = self.loss(output['pred'], input['target'])
-        else:
+        else:  # 这一部分代码相当于一个 router, 把不同任务的
             loss = 0
             output['pred'] = {}
-            output['loss_task'] = {}
-            unique_task_idx = torch.unique(input['task_idx'])
-            for i in range(len(unique_task_idx)):
+            output['loss_task'] = {} # 这个估计是记录每一个 task 的 loss
+            unique_task_idx = torch.unique(input['task_idx'])  # 这里一个 input 的 batch 里面可能包含多个 task 的样本
+            for i in range(len(unique_task_idx)): # 一个 input batch 中的数据会包含多个 task 的样本，这里的 loop 是一个 task 一个 task 地去 iterate
                 task_idx = unique_task_idx[i].item()
-                mask_i = input['task_idx'] == task_idx
+                mask_i = input['task_idx'] == task_idx # 把属于 task_idx 这个 task 的那些样本都找出来
                 task_idx = self.task_idx_mapping[task_idx] # revised order
-                output_i = self.output_proj[task_idx](decoder_input[mask_i])
-                target_i = input['target'][mask_i]
+                output_i = self.output_proj[task_idx](decoder_input[mask_i]) # decoder_input[mask_i] 把属于这个 task 的 decoder_input 给拿出来
+                target_i = input['target'][mask_i] # 把属于这个 task 的 target 给拿出来
                 output['pred'][task_idx] = output_i
                 loss_i = self.loss(output_i, target_i, reduction='sum')
                 loss += loss_i
             output['loss'] = loss / len(encoder_outputs)
-            if not self.training and 'test_task_idx' in input:
+            if not self.training and 'test_task_idx' in input: # 这个是 test 的时候用的
                 output['pred'] = output['pred'][input['test_task_idx']]
         return output
 
@@ -236,7 +238,7 @@ def base(cfg, gene_encoder, gene_tokenizer, qformer=None, llm=None, llm_tokenize
     hidden_size = cfg['dnabert2']['hidden_size']
     target_size = cfg['target_size']
     num_datasets = cfg['num_datasets']
-    num_targets = cfg['num_targets']
+    num_targets = cfg['num_targets'] # 这里指的是 task 的个数
     task_names = cfg['task_names']
     subset_names = cfg['subset_names']
     task_name = cfg['task_name']
