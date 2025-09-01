@@ -41,9 +41,9 @@ def process_control():
     else:
         cfg['num_epochs'] = num_epochs[cfg['task_name']]
     # cfg['num_epochs'] = None  # for test
-
+    
     cfg['collate_mode'] = 'dict'
-
+    
     cfg['task_names'] = ['EMP', 'mouse', 'promcore', 'prom300', 'splice', 'tf', 'virus']
     cfg['subset_names'] = {
         'EMP': ['H3', 'H3K4me1', 'H3K4me2', 'H3K4me3', 'H3K9ac', 'H3K14ac', 'H3K36me3', 'H3K79me3', 'H4', 'H4ac'],
@@ -71,17 +71,17 @@ def process_control():
             dataset_indices[index_name] = index
             index += 1
     cfg['dataset_indices'] = dataset_indices
-
+     
     cfg['model'] = {}
     cfg['model']['model_source'] = 'modelscope'
     cfg['model']['hub_model_identifier'] = ['Qwen']
-
+     
     cfg['model']['model_name'] = cfg['model_name']
     cfg['model']['task_names'] = cfg['task_names']
     cfg['model']['subset_names'] = cfg['subset_names']
     cfg['model']['task_name'] = cfg['task_name']
     cfg['model']['subset_name'] = cfg['subset_name']
-
+     
     cfg['model']['dnabert2'] = {'hidden_size': 768}
     cfg['model']['padding_side'] = 'right'
     cfg['model']['instruction'] = {
@@ -118,7 +118,7 @@ def process_control():
                                'hidden_size': cfg['model']['dnabert2']['hidden_size'],
                                'encoder_width': cfg['model']['dnabert2']['hidden_size'],
                                'cross_attention_freq': 2}
-
+    
     # https://github.com/MAGICS-LAB/DNABERT_2/blob/main/finetune/train.py
     # https://github.com/MAGICS-LAB/DNABERT_2/blob/main/finetune/scripts/run_dnabert2.sh
     tag = cfg['tag']

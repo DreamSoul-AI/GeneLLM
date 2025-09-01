@@ -77,7 +77,9 @@ class BertBase(nn.Module):
             for i in range(num_targets):
                 target_size_i = target_size[self.task_names[i]]
                 # task_idx_mapping[self.task_names.index(self.task_name[i])] = i
-                task_idx_mapping[self.task_names.index(self.task_names[i])] = i  # Q: how this task_idx_mapping is used?
+                if self.task_name == 'all':
+                    self.task_name = self.task_names
+                task_idx_mapping[self.task_names.index(self.task_name[i])] = i  # Q: how this task_idx_mapping is used?
                 output_proj.append(nn.Linear(hidden_size, target_size_i))
             self.task_idx_mapping = task_idx_mapping
             self.output_proj = nn.ModuleList(output_proj) # nn.ModuleList 确保所有参数都 registered, 这样 optimizer 才会对参数更新
@@ -171,7 +173,7 @@ class LLMBase(nn.Module):
             task_idx_mapping = {}
             for i in range(num_targets):
                 task_idx_mapping[self.task_names.index(self.task_name[i])] = i
-            self.task_idx_mapping = task_idx_mapping
+            self.task_idx_mapping = task_idx_mapping  # key: original task idx, value: revised task idx
 
         self.loss = make_loss
 
