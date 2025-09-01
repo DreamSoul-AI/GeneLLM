@@ -58,10 +58,10 @@ class BertBase(nn.Module):
         self.target_size = target_size
         self.num_datasets = num_datasets
         self.num_targets = num_targets
-        self.task_names = task_names
-        self.subset_names = subset_names
-        self.task_name = task_name
-        self.subset_name = subset_name
+        self.task_names = task_names # 存的是所有 tasks 的 names
+        self.subset_names = subset_names # dic, key: task_name, value: list of subset names 存的是所有的 task_names, 及其对应的 subset_names
+        self.task_name = task_name  # 存的是当前实验需要做的 task_name
+        self.subset_name = subset_name # 存的是当前实验需要做的 task_name 及其对应的 subsets, 有可能是 "all"
         self.freeze = freeze
         if self.freeze == 1:
             for p in self.model.parameters():
@@ -73,13 +73,13 @@ class BertBase(nn.Module):
             self.output_proj = nn.Linear(hidden_size, target_size)
         else:
             output_proj = []
-            task_idx_mapping = {}
+            task_idx_mapping = {}  # key: original task idx, value: revised task idx
             for i in range(num_targets):
                 target_size_i = target_size[self.task_names[i]]
                 # task_idx_mapping[self.task_names.index(self.task_name[i])] = i
                 if self.task_name == 'all':
                     self.task_name = self.task_names
-                task_idx_mapping[self.task_names.index(self.task_name[i])] = i  # Q: how this task_idx_mapping is used?
+                task_idx_mapping[self.task_names.index(self.task_name[i])] = i  # Q: how this task_idx_mapping is used? # key: original task idx, value: revised task idx
                 output_proj.append(nn.Linear(hidden_size, target_size_i))
             self.task_idx_mapping = task_idx_mapping
             self.output_proj = nn.ModuleList(output_proj) # nn.ModuleList 确保所有参数都 registered, 这样 optimizer 才会对参数更新
@@ -170,10 +170,10 @@ class LLMBase(nn.Module):
         self.gene_proj = nn.Linear(hidden_size, llm_hidden_size)
 
         if num_targets > 1:
-            task_idx_mapping = {}
+            task_idx_mapping = {} # key: original task idx, value: revised task idx. 比如，task_name = ['EMP', 'promcore'] , 那么 task_idx_mapping = {0:0, 2:1}， 这里 revised task idx 就是 0，1，2，... 这种顺序
             for i in range(num_targets):
                 task_idx_mapping[self.task_names.index(self.task_name[i])] = i
-            self.task_idx_mapping = task_idx_mapping  # key: original task idx, value: revised task idx
+            self.task_idx_mapping = task_idx_mapping  # key: original task idx, value: revised task idx 
 
         self.loss = make_loss
 
