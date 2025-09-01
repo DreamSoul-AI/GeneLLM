@@ -22,14 +22,14 @@ class DataEmbedding(nn.Module):
         elif self.embedding_mode == 'word':
             embedding = []
             for task_name in self.task_names:
-                embedding_i = load(os.path.join('data', 'GUE', 'description_embedding', task_name))['pooler_output']
+                embedding_i = load(os.path.join('data', 'GUE', 'description_embedding', task_name))['pooler_output'] # 这里用的是 pooler_output
                 embedding.append(embedding_i)
             embedding = torch.cat(embedding, dim=0)
-            word_embedding_size = embedding.size(-1)
+            word_embedding_size = embedding.size(-1) # 每一个 word embedding vector 有多长
             task_embedding = nn.Embedding(len(self.task_names), word_embedding_size)
-            task_embedding.weight.data.copy_(embedding.data)
-            task_embedding.weight.requires_grad = False
-            self.task_embedding = nn.Sequential(task_embedding, nn.Linear(word_embedding_size, hidden_size))
+            task_embedding.weight.data.copy_(embedding.data) 
+            task_embedding.weight.requires_grad = False # 这里的 word embedding 不进行更新
+            self.task_embedding = nn.Sequential(task_embedding, nn.Linear(word_embedding_size, hidden_size)) # 这里把 word embedding 的 size (1024) 映射到 hidden_size （768）
         else:
             self.dataset_embedding = None
 
@@ -238,7 +238,7 @@ def base(cfg, gene_encoder, gene_tokenizer, qformer=None, llm=None, llm_tokenize
     hidden_size = cfg['dnabert2']['hidden_size']
     target_size = cfg['target_size']
     num_datasets = cfg['num_datasets']
-    num_targets = cfg['num_targets'] # 这里指的是 task 的个数
+    num_targets = cfg['num_targets'] # 这里指的是 task 的个数, 也可以认为是模型输入的个数
     task_names = cfg['task_names']
     subset_names = cfg['subset_names']
     task_name = cfg['task_name']
