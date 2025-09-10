@@ -43,7 +43,8 @@ def runExperiment():
     dataset = make_dataset(cfg['data_name'], task_name=cfg['task_name'], subset_name=cfg['subset_name'])
     dataset = process_dataset(dataset)
     model = make_model(cfg['model'])
-    dataset = update_dataset(dataset, model.gene_tokenizer)
+    # dataset = update_dataset(dataset, model.gene_tokenizer)
+    dataset = update_dataset(dataset, model.tokenizer)
     result = resume(cfg['best_path'])
     if result is None:
         raise ValueError('No valid model, please train model first')
