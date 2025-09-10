@@ -125,7 +125,7 @@ def process_control():
     cfg[tag] = {}
     cfg[tag]['optimizer'] = {}
     cfg[tag]['optimizer']['optimizer_name'] = 'AdamW'
-    cfg[tag]['optimizer']['lr'] = 3e-5
+    cfg[tag]['optimizer']['lr'] = 3e-5 # 3e-5 还可以再小一些 1e-5
     cfg[tag]['optimizer']['momentum'] = 0.9
     cfg[tag]['optimizer']['betas'] = (0.9, 0.999)
     cfg[tag]['optimizer']['weight_decay'] = 0.01
