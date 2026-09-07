@@ -1,0 +1,32 @@
+{
+  "status": "passed",
+  "path_models": 369,
+  "candidate_models": 576,
+  "selected_records": 162,
+  "max_validation_bce_recompute_error": 2.220446049250313e-16,
+  "split_disjointness": true,
+  "cost_and_coverage": true,
+  "test_metric_recomputation": true,
+  "selection_replay": true,
+  "source_hashes": true,
+  "math_unchanged": true,
+  "repeat_numerical_outputs_identical": true,
+  "unit_tests": {
+    "command": ".venv\\Scripts\\python.exe -m pytest tests/test_group_lasso.py -q",
+    "passed": 11
+  },
+  "figure_visual_review": "passed",
+  "standalone_export": {
+    "date": "2026-09-07",
+    "branch": "experiments/group-lasso-pilot",
+    "separate_virtual_environment": true,
+    "pytest_passed": 11,
+    "numerical_csv_files_identical": [
+      "candidates.csv",
+      "selected.csv",
+      "summary.csv",
+      "path.csv"
+    ],
+    "working_and_staged_source_hashes_verified": true
+  }
+}
