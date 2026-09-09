@@ -1,0 +1,13 @@
+{
+  "candidate_models_verified": 120,
+  "selected_rows_verified": 114,
+  "max_validation_metric_error": 0.0,
+  "max_test_metric_error": 0.0,
+  "max_training_objective_error": 1.1102230246251565e-16,
+  "split_scaling_billing_selection_and_input_invariance": "passed",
+  "code_hashes": "matched",
+  "mlp_repeat_parameter_arrays_identical": 288,
+  "mlp_repeat_trace_files_identical": 6,
+  "summary_rows_verified": 38,
+  "pytest_passed": 22
+}

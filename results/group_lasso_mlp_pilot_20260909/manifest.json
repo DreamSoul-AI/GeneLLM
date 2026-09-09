@@ -1,0 +1,96 @@
+{
+  "date": "2026-09-09",
+  "data_kind": "synthetic_only",
+  "cost_unit": "proxy_unit",
+  "samples": 2400,
+  "seeds": [
+    51966,
+    51967,
+    51968
+  ],
+  "hidden": 24,
+  "activation": "tanh",
+  "iterations": 1500,
+  "ridge_all_weight_matrices": 0.001,
+  "lambdas": [
+    0.0,
+    0.001,
+    0.003,
+    0.01,
+    0.03,
+    0.1
+  ],
+  "alphas": [
+    0.0,
+    0.0005,
+    0.001,
+    0.003,
+    0.01
+  ],
+  "groups": [
+    [
+      2,
+      3,
+      4
+    ],
+    [
+      5,
+      6,
+      7
+    ],
+    [
+      8,
+      9,
+      10
+    ],
+    [
+      11,
+      12,
+      13
+    ],
+    [
+      14,
+      15,
+      16
+    ],
+    [
+      17,
+      18,
+      19
+    ]
+  ],
+  "costs": [
+    10.0,
+    20.0,
+    35.0,
+    60.0,
+    90.0,
+    140.0
+  ],
+  "free_features": [
+    0,
+    1
+  ],
+  "truth_groups": [
+    0,
+    1
+  ],
+  "test_selection": false,
+  "cost_in_mlp_training": true,
+  "group_weight": "sqrt(size) * cost / median(positive costs)",
+  "activity": "exact zero after proximal update",
+  "stationarity_tolerance": 0.0001,
+  "python": "3.12.12",
+  "numpy": "2.4.6",
+  "scipy": "1.17.1",
+  "sklearn": "1.8.0",
+  "blas_threads": 1,
+  "sha256": {
+    "run_experiment/run_group_lasso_mlp_pilot.py": "8a3cf12e4552d6aed881fc88c8da3acc39fc47752234364a7f42dfb169964787",
+    "medfs/selectors/group_lasso_mlp.py": "4666f7d3d346675d17e67becc90ce8135f0fedc13d6fa455cf192aff31c33103",
+    "run_experiment/run_group_lasso_pilot.py": "ce19e0473ad03371c2a7a7e09ddb002023ce2cd21bf38d3d7ac4fa0461fa03ab",
+    "medfs/selectors/group_lasso.py": "1eb053f6d7971d87a5b6b9d7aea7bef48dd06106078dfbd7ddd17db86ca67988",
+    "run_experiment/cost_aware_formulation_v1.md": "5581dfcabbf564dc5ef4ce49ba353fa7fca841994b432f4fa23ad4b366b0c349"
+  },
+  "elapsed_seconds": 171.58176050000475
+}
