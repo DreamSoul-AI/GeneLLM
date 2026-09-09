@@ -1,0 +1,9 @@
+{
+  "historical_rows_preserved_and_fixed_gt_verified": 234,
+  "candidate_rows": 120,
+  "selected_rows": 114,
+  "summary_rows_checked": 38,
+  "links_and_provenance": "passed",
+  "tests_passed": 28,
+  "historical_model_numeric_audit": "passed; original 120 candidates and 114 selected predictions unchanged"
+}

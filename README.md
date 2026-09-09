@@ -1,8 +1,8 @@
 # Group Lasso：疾病级低成本特征选择
 
-本分支独立保存 Group Lasso 的实现、问题定义、方法说明及合成实验。每个疾病学习一套统一检查方案及对应预测模型，以平均 BCE 与实际检查费用的加权和比较方案。
+本分支独立保存 Group Lasso 的实现、问题定义、方法说明及合成实验。当前目标是：**对每个疾病，在完整保留疾病预测信息的方案中找到费用最低的检查集，并训练对应预测模型。** 正确答案固定，α 等超参数只影响方法，不改变 GT；不设置费用预算上限。
 
-2026-09-09 起，主预测模型为 **MLP＋成本加权 Group Lasso**：各层共同学习非线性预测关系，检查价格通过第一层输入连接块的组惩罚参与训练。已选 MLP 直接预测，不再用 logistic 重拟合。验证数据上的 `BCE + α × Cost` 用于方法参数和方案选择，不设置预算上限。
+主预测模型为 **MLP＋成本加权 Group Lasso**：各层共同学习非线性预测关系，检查价格通过第一层输入连接块的组惩罚参与训练。现有代码中的 `BCE + α × Cost` 是历史验证选择启发式，不是研究目标或充分性证明；当前按固定 GT 重新评价其输出。
 
 MLP 的训练目标连续但非凸；组范数是实际费用的代理，实际账单按选中的检查全价计算。logistic 的旧实现与结果保留为线性基线。
 
@@ -10,13 +10,14 @@ MLP 的训练目标连续但非凸；组范数是实际费用的代理，实际�
 
 ## 内容
 
-- [问题与数学定义](run_experiment/cost_aware_formulation_v1.md)
+- [当前问题与数学定义 v2](run_experiment/cost_aware_formulation_v2.md)
 - [方法与实验设计](run_experiment/cost_aware_methods_and_experiments.md)
 - [MLP Group Lasso 求解器](medfs/selectors/group_lasso_mlp.py)
 - [MLP 非线性实验入口](run_experiment/run_group_lasso_mlp_pilot.py)
-- [MLP 实验报告](results/group_lasso_mlp_pilot_20260909/report.md)
+- [固定 GT 复核报告](results/group_lasso_fixed_gt_20260909/report.md)
+- [历史 MLP 训练报告](results/group_lasso_mlp_pilot_20260909/report.md)
 - [独立结果核验](run_experiment/verify_group_lasso_mlp_pilot.py)
-- [MLP 测试](tests/test_group_lasso_mlp.py)及 [logistic 测试](tests/test_group_lasso.py)，共 22 项
+- [MLP 测试](tests/test_group_lasso_mlp.py)、[logistic 测试](tests/test_group_lasso.py)和 [固定 GT 评价测试](tests/test_fixed_gt_evaluation.py)，共 28 项
 - [旧 logistic 求解器](medfs/selectors/group_lasso.py)及 [旧实验报告](results/group_lasso_pilot_20260907/report.md)
 
 ## 环境和复现
@@ -29,6 +30,8 @@ cd GeneLLM-group-lasso
 uv venv --python 3.12 .venv
 uv pip install --python .venv/Scripts/python.exe -r requirements.txt
 .venv/Scripts/python.exe -m pytest -q
+.venv/Scripts/python.exe -m run_experiment.evaluate_group_lasso_fixed_gt --output results/group_lasso_fixed_gt_rerun
+# 复现历史模型训练及其数值核验：
 .venv/Scripts/python.exe -m run_experiment.run_group_lasso_mlp_pilot --output results/group_lasso_mlp_pilot_rerun
 .venv/Scripts/python.exe -m run_experiment.verify_group_lasso_mlp_pilot results/group_lasso_mlp_pilot_rerun
 # 复现历史 logistic 基线：
@@ -41,7 +44,14 @@ Linux/macOS 将 `.venv/Scripts/python.exe` 替换为 `.venv/bin/python`。脚本
 
 单隐藏层 tanh MLP（20→24→1），每个合成任务 2400 条记录、3 个种子、60%/20%/20% 分层划分。线性对照与双特征乘积任务使用相同的检查结构和价格；各模型在同一批数据和划分上比较。
 
-成本加权 MLP 在预设 α=0.001 下的测试 AUROC，线性任务约 0.87、交互任务约 0.88；相应费用均值为 30 和 41.7 proxy_unit。完整结果和全部对照见 [报告](results/group_lasso_mlp_pilot_20260909/report.md)。这是受控机制实验，不能据此声称 MLP 在所有真实疾病上更好。
+两个任务的最低费用充分方案均为 **g0＋g1，费用 30**。沿用此前展示的历史 α=0.001，成本加权 MLP 的固定 GT 结果为：
+
+| 任务 | 完全恢复 GT | 信息充分 | 具体问题 |
+| --- | ---: | ---: | --- |
+| 线性对照 | 3/3 | 3/3 | 三次均选中 g0＋g1。 |
+| 非线性交互 | 2/3 | 3/3 | 一次多选 g2，费用为 65。 |
+
+因此非线性任务的平均 AUROC 约 0.88、费用约 41.7，不能替代恢复 GT 的结论。全部历史参数位置的成功与失败均见 [固定 GT 复核](results/group_lasso_fixed_gt_20260909/report.md)；这次没有用 GT 改选参数或重新训练。真实数据中的充分性近似与调参方法仍需设计。
 
 72 个 MLP 拟合中 3 个达到预设 1e-4 驻点残差，其余达到训练步数上限；全输入 MLP 出现过拟合。保存全部训练轨迹及数值诊断，不把固定训练次数标成收敛。当前不包含重叠检查实现或真实受试者数据。
 
@@ -58,5 +68,7 @@ Linux/macOS 将 `.venv/Scripts/python.exe` 替换为 `.venv/bin/python`。脚本
 费用单位为 proxy_unit。369 个路径模型达到 KKT 残差 ≤1e-7；与全部 64 组合的枚举参照相比，72 个配置中 67 个选出相同方案。有限路径会漏掉候选，不能据此宣称全局最低成本或真实疾病诊断效果。
 
 保存的 NPZ 文件全部是该脚本生成的合成数据、模型和数据划分；CSV、PNG/SVG 和 JSON 文件包含结果、配置及核验记录。复现时可核对 `candidates.csv`、`selected.csv`、`summary.csv` 和 `path.csv`。
+
+[数学定义 v1](run_experiment/cost_aware_formulation_v1.md)仅作为历史版本按原字节保留，以维持旧实验来源哈希；当前研究目标和评价口径以 v2 为准。
 
 本分支是一次独立的 Group Lasso 工作快照；GeneLLM 原有分支的代码未纳入本实验。
